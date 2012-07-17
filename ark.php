@@ -265,13 +265,14 @@ function ark_parse_query_path(){
 	}
 
 	$urlinfo = parse_url($request_uri);
-	$info = substr($urlinfo['path'], $slash_pos + 1);
-	if(false === $info){
-		if(isset($_GET['r'])){
-			$info = $_GET['r'];
-		}
-	}
 	
+	if(null === $request_basename){
+		$info = substr($urlinfo['path'], $slash_pos + 1);
+	}
+	else{
+		$info = isset($_GET['r'])?$_GET['r']:'';
+	}
+
 	$q['path'] = $info;
 	return $q;
 }
