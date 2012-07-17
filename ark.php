@@ -11,7 +11,7 @@ function ark($name = null){
 		$container = new PContainer($service_configs);
 		
 		//注册内置服务
-		$container->set('event', new PEvent());
+		$container->set('event', new AEvent());
 	}
 	
 	//不指定服务时返回服务容器
@@ -100,7 +100,7 @@ class PContainer
     }
 }
 
-class PEvent
+class AEvent
 {
     protected $eventList = array();
 
@@ -135,7 +135,7 @@ class PEvent
 /**
  * Universal Autoloader
  */
-class PAutoload
+class AAutoload
 {
     static private $namespaces = array(
     );
@@ -388,9 +388,9 @@ function ark_event($event, $callback){
 }
 
 function ark_autoload_class($class, $file){
-	PAutoload::registerFile($class, $file);
+	AAutoload::registerFile($class, $file);
 }
 
 function ark_autoload_dir($dir, $hasChild = true){
-	PAutoload::registerDir($dir, $hasChild);
+	AAutoload::registerDir($dir, $hasChild);
 }
