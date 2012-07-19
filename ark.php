@@ -241,39 +241,43 @@ function ark_404(){
 }
 
 function ark_parse_query_path(){
-	$script_name = $_SERVER['SCRIPT_NAME'];
-	$script_name_length = strlen($script_name);
+	static $q;
+	if(null === $q){
+		$q = array();
+		$script_name = $_SERVER['SCRIPT_NAME'];
+		$script_name_length = strlen($script_name);
 
-	$request_uri = $_SERVER['REQUEST_URI'];
+		$request_uri = $_SERVER['REQUEST_URI'];
 
-	$slash_pos = strrpos($script_name, '/');
-	$base = substr($script_name, 0, $slash_pos);
-	$q['base'] = $base;
+		$slash_pos = strrpos($script_name, '/');
+		$base = substr($script_name, 0, $slash_pos);
+		$q['base'] = $base;
 
-	//is script name in uri?
-	if(substr($request_uri, 0, $script_name_length) == $script_name){
-		if(
-			!isset($request_uri[$script_name_length]) 
-			|| 
-			in_array($request_uri[$script_name_length], array('/', '?'))
-		){
-			$request_basename = basename($script_name);
+		//is script name in uri?
+		if(substr($request_uri, 0, $script_name_length) == $script_name){
+			if(
+				!isset($request_uri[$script_name_length]) 
+				|| 
+				in_array($request_uri[$script_name_length], array('/', '?'))
+			){
+				$request_basename = basename($script_name);
+			}
 		}
-	}
-	else{
-		$request_basename = null;
-	}
+		else{
+			$request_basename = null;
+		}
 
-	$urlinfo = parse_url($request_uri);
-	
-	if(null === $request_basename){
-		$info = substr($urlinfo['path'], $slash_pos + 1);
-	}
-	else{
-		$info = isset($_GET['r'])?$_GET['r']:'';
-	}
+		$urlinfo = parse_url($request_uri);
+		
+		if(null === $request_basename && !isset($_GET['r'])){
+			$info = substr($urlinfo['path'], $slash_pos + 1);
+		}
+		else{
+			$info = isset($_GET['r'])?$_GET['r']:'';
+		}
 
-	$q['path'] = $info;
+		$q['path'] = $info;
+	}
 	return $q;
 }
 
@@ -294,6 +298,12 @@ function ark_route($path, $config = null){
 						$params[$k] = $v;
 					}
 				}
+				if(!is_string($match)){
+					return array(
+						'handler' => $target,
+						'params' => $params,
+					);
+				}
 				$path = $target;
 				break;
 			}
@@ -310,27 +320,33 @@ function ark_route($path, $config = null){
 	);
 }
 
-function ark_dispatch($controller, $action, $params){
+function ark_dispatch($r){//$controller, $action, $params){
 	//释放url path里的变量
-	foreach($params as $k => $v){
-		$_GET[$k] = $v;
-		$_REQUEST[$k] = $v;
+	if(isset($r['params'])){
+		foreach($r['params'] as $k => $v){
+			$_GET[$k] = $v;
+			$_REQUEST[$k] = $v;
+		}
+	}
+	if(isset($r['handler'])){
+		call_user_func($r['handler']);
+		return true;
 	}
 
-	if($controller == ''){
-		$controller = 'default';
+	if($r['controller'] === null){
+		$r['controller'] = 'default';
 	}
-	if($action == ''){
-		$action = 'index';
+	if($r['action'] === null){
+		$r['action'] = 'index';
 	}
 
-	$controllerFile = APP_DIR.'/source/controller/'.$controller.'Controller.php';
+	$controllerFile = APP_DIR.'/source/controller/'.$r['controller'].'Controller.php';
 	if(!file_exists($controllerFile)){
 		ark('event')->trigger('ark.404');
 	}
 	else{
-		$classname = $controller.'Controller';
-		$methodName = $action.'Action';
+		$classname = $r['controller'].'Controller';
+		$methodName = $r['action'].'Action';
 		$o = new $classname;
 		if(!method_exists($o, $methodName)){
 			ark('event')->trigger('ark.404');
@@ -339,6 +355,11 @@ function ark_dispatch($controller, $action, $params){
 			call_user_func(array($o, $methodName));
 		}
 	}
+}
+
+function ark_match($pattern, $callback){
+	global $ARK_CONFIG;
+	$ARK_CONFIG['route'][$pattern] = $callback;
 }
 
 /**
@@ -360,7 +381,7 @@ function ark_config($key, $default = null){
  */
 function ark_url($path = '', $params = null){
 	$url = APP_URL;
-	$rewrite = ark_config('rewrite', false);
+	$rewrite = ark_config('rewrite', true);
 	if($path !== ''){
 		if($rewrite){
 			$url.=$path;
@@ -388,8 +409,15 @@ function ark_event($event, $callback){
 	ark('event')->bind($event, $callback);
 }
 
-function ark_autoload_class($class, $file){
-	AAutoload::registerFile($class, $file);
+function ark_autoload_class($class, $file = null){
+	if(is_array($class)){
+		foreach($class as $k => $v){
+			AAutoload::registerFile($k, $v);
+		}
+	}
+	else{
+		AAutoload::registerFile($class, $file);
+	}
 }
 
 function ark_autoload_dir($dir, $hasChild = true){

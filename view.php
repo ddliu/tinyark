@@ -53,7 +53,7 @@ class AView
      * @param string $name view name
      * @return string
      */
-    protected function getViewFile($name){
+    public function getViewFile($name){
 		$path = '';
 		if(isset($this->options['dir'])){
 			$path.=$this->options['dir'].'/';
@@ -153,6 +153,7 @@ class AView
         //class name
         if(is_string($helper)){
             $helper = new $helper($this);
+            $this->helpers[$name] = $helper;
         }
 
         return $helper;
@@ -356,7 +357,7 @@ abstract class AViewHelper
 {
     protected $view;
 
-    public function __construct(View $view){
+    public function __construct($view){
         $this->view = $view;
     }
 }
@@ -368,6 +369,7 @@ class AViewCoreHelper extends AViewHelper
 {
     protected $captureVar = false;
     protected $captures = array();
+    protected $filter = null;
 
     /**
      * Escape content with htmlspecialchars
@@ -424,6 +426,10 @@ class AViewCoreHelper extends AViewHelper
         ob_start();
         $this->captureVar = $var;
     }
+    
+    public function beginCapture($var = null){
+		$this->capture($var);
+	}
 
     /**
      * Finish capture block of content
@@ -461,6 +467,18 @@ class AViewCoreHelper extends AViewHelper
             return isset($this->captures[$var])?$this->captures[$var]:'';
         }
     }
+    
+    public function beginFilter($name){
+		$this->filter = $name;
+		$this->beginCapture('filter');
+	}
+	
+	public function endFilter(){
+		$this->endCapture();
+		$content = $this->getCapture('filter');
+		echo call_user_func($this->filter, $content);
+		$this->filter = null;
+	}
 }
 
 class AViewHtmlHelper extends AViewHelper

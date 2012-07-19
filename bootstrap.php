@@ -1,4 +1,6 @@
 <?php
+define('ARK_MICROTIME', microtime(true));
+define('ARK_TIMESTAMP', round(ARK_MICROTIME));
 // 屏蔽错误
 if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
 	error_reporting(E_ALL^E_NOTICE);
@@ -15,7 +17,7 @@ if(!defined('APP_DIR')){
 	define('APP_DIR', ARK_DIR.'/../../..');
 }
 
-define('TIMESTAMP', time());//统一的时间，防止多处使用time可能造成的冲突
+
 
 //通用函数/类
 require(dirname(__FILE__).'/ark.php');
@@ -24,8 +26,11 @@ require(dirname(__FILE__).'/ark.php');
 spl_autoload_register('AAutoload::load');
 
 //register ark classes
-ark_autoload_class('AView', ARK_DIR.'/view.php');
-ark_autoload_class('AController', ARK_DIR.'/controller.php');
+ark_autoload_class(array(
+	'AView' => ARK_DIR.'/view.php',
+	'AViewHelper' => ARK_DIR.'/view.php',
+	'AController' => ARK_DIR.'/controller.php'
+));
 
 //register app classes
 ark_autoload_dir(APP_DIR.'/source/controller');
@@ -69,6 +74,6 @@ if(!$r = ark_route($q['path'], ark_config('route'))){
 }
 else{
 	ark('event')->trigger('ark.dispatch');
-	ark_dispatch($r['controller'], $r['action'], $r['params']);
+	ark_dispatch($r);
 }
 ark('event')->trigger('ark.shutdown');
