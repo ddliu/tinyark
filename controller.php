@@ -1,8 +1,6 @@
 <?php
 /**
- * 页面
- * 模板/请求/返回等页面相关
- * @author dong
+ * Controller
  */
 class AController{
 	public function __construct(){
@@ -21,9 +19,8 @@ class AController{
 	}
 	
 	/**
-	 * json返回页面请求结果
+	 * Send data with json result
 	 * @param int $errcode
-	 * 	系统errcode表：
 	 * 	- 0: ok
 	 * 	- 400: bad request
 	 * 		- 40001: param error
@@ -44,9 +41,9 @@ class AController{
 	}
 	
 	/**
-	 * 输出json数据
+	 * Output json data
 	 * @param mixed $data
-	 * @param boolean $formated 数据是否已经使用json_encode格式化
+	 * @param boolean $formated is data formated
 	 */
 	public function renderJson($data, $formated = true){
 		header('Content-type: application/json');
@@ -60,7 +57,7 @@ class AController{
 	}
 	
 	/**
-	 * 转向
+	 * Redirect
 	 * @param string $url
 	 */
 	public function redirect($url){
@@ -72,7 +69,7 @@ class AController{
 	}
 	
 	/**
-	 * 请求方式是否POST
+	 * Check request method
 	 */
 	public function isPost(){
 		return $_SERVER['REQUEST_METHOD'] == 'POST';

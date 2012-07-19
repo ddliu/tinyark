@@ -1,7 +1,6 @@
 <?php
 define('ARK_MICROTIME', microtime(true));
 define('ARK_TIMESTAMP', round(ARK_MICROTIME));
-// 屏蔽错误
 if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
 	error_reporting(E_ALL^E_NOTICE);
 }
@@ -9,17 +8,14 @@ else{
 	error_reporting(0);
 }
 
-//框架目录
 define( 'ARK_DIR' , dirname(__FILE__));
 
-//项目目录
+//App dir
 if(!defined('APP_DIR')){
 	define('APP_DIR', ARK_DIR.'/../../..');
 }
 
-
-
-//通用函数/类
+//Load kernel
 require(dirname(__FILE__).'/ark.php');
 
 //autoload
@@ -50,7 +46,7 @@ if(isset($ARK_CONFIG['platform']) && in_array($ARK_CONFIG['platform'], array('sa
 	require ARK_DIR.'/platform/'.$ARK_CONFIG['platform'].'.php';
 }
 
-//默认服务及事件
+//Setup default services and events
 ark('event')->bind('ark.404', 'ark_404');
 if(!isset($ARK_CONFIG['services']['view'])){
 	ark()->register('view', array(
@@ -65,6 +61,7 @@ if(!isset($ARK_CONFIG['services']['view'])){
 	));
 }
 
+//Load app
 require(APP_DIR.'/source/app.php');
 
 ark('event')->trigger('ark.ready');

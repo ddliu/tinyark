@@ -1,7 +1,7 @@
 <?php
 /**
- * 获取服务
- * @param string $name 服务名
+ * Get service
+ * @param string $name Service name
  * @return mixed
  */
 function ark($name = null){
@@ -10,11 +10,11 @@ function ark($name = null){
 		$service_configs = ark_config('services', array());
 		$container = new PContainer($service_configs);
 		
-		//注册内置服务
+		//register internal service
 		$container->set('event', new AEvent());
 	}
 	
-	//不指定服务时返回服务容器
+	//return container if service not specified
 	if(null === $name){
 		return $container;
 	}
@@ -24,7 +24,7 @@ function ark($name = null){
 
 
 /**
- * 服务容器
+ * Service container
  */
 class PContainer
 {
@@ -41,7 +41,7 @@ class PContainer
     }
 
 	/**
-	 * 取得服务
+	 * Get service by name
 	 */
     public function get($name){
         if(!isset($this->services[$name])){
@@ -91,7 +91,7 @@ class PContainer
             //inject container
             if(isset($service)){
                 $this->set($name, $service);
-                //ready事件
+                //ready event of service
                 if(isset($this->services['event'])){
                     $this->get('event')->trigger($name.'.ready');
                 }
@@ -228,7 +228,7 @@ class AAutoload
 
 
 /**
- * 输出404页面
+ * 404 page
  */
 function ark_404(){
 	header("HTTP/1.0 404 Not Found");
@@ -283,7 +283,7 @@ function ark_parse_query_path(){
 
 
 /**
- * 路由解析
+ * Route
  * @param string $path
  * @param array $config
  * @return array|boolean
@@ -321,7 +321,6 @@ function ark_route($path, $config = null){
 }
 
 function ark_dispatch($r){//$controller, $action, $params){
-	//释放url path里的变量
 	if(isset($r['params'])){
 		foreach($r['params'] as $k => $v){
 			$_GET[$k] = $v;
@@ -363,7 +362,7 @@ function ark_match($pattern, $callback){
 }
 
 /**
- * 获取配置
+ * Get config
  * @param string $key
  * @param mixed $default
  * @return mixed
@@ -374,7 +373,7 @@ function ark_config($key, $default = null){
 }
 
 /**
- * 生成url
+ * Generate url
  * @param string $path
  * @param mixed $params
  * @return string
