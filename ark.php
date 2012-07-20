@@ -298,7 +298,7 @@ function ark_route($path, $config = null){
 						$params[$k] = $v;
 					}
 				}
-				if(!is_string($match)){
+				if(!is_string($target)){
 					return array(
 						'handler' => $target,
 						'params' => $params,
@@ -314,8 +314,8 @@ function ark_route($path, $config = null){
 		return false;
 	}
 	return array(
-		'controller' => $match['c'],
-		'action' => $match['a'],
+		'controller' => $match['c'] === null?'':$match['c'],
+		'action' => $match['a'] === null?'':$match['a'],
 		'params' => $params,
 	);
 }
@@ -332,10 +332,10 @@ function ark_dispatch($r){//$controller, $action, $params){
 		return true;
 	}
 
-	if($r['controller'] === null){
+	if($r['controller'] === ''){
 		$r['controller'] = 'default';
 	}
-	if($r['action'] === null){
+	if($r['action'] === ''){
 		$r['action'] = 'index';
 	}
 
