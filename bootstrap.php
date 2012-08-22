@@ -8,11 +8,18 @@ else{
 	error_reporting(0);
 }
 
+//Path defination
 define( 'ARK_DIR' , dirname(__FILE__));
 
 //App dir
 if(!defined('APP_DIR')){
 	define('APP_DIR', ARK_DIR.'/../../..');
+}
+if(!defined('SOURCE_DIR')){
+	define('SOURCE_DIR', APP_DIR.'/source');
+}
+if(!defined('VENDOR_DIR')){
+	define('VENDOR_DIR', SOURCE_DIR.'/vendor');
 }
 
 //Load kernel
@@ -29,7 +36,7 @@ ark_autoload_class(array(
 ));
 
 //register app classes
-ark_autoload_dir(APP_DIR.'/source/controller');
+//ark_autoload_dir(APP_DIR.'/source/controller');
 
 //parse request
 $q = ark_parse_query_path();
@@ -39,6 +46,16 @@ define('APP_URL','http://'.$_SERVER['HTTP_HOST'].$q['base'].'/');
 $ARK_CONFIG = include(APP_DIR . '/source/config.php');
 if(!$ARK_CONFIG){
 	$ARK_CONFIG = array();
+}
+
+//autoload custom classes
+if(isset($ARK_CONFIG['autoload']['dir'])){
+	foreach($ARK_CONFIG['autoload']['dir'] as $dir){
+		ark_autoload_dir($dir);
+	}
+}
+if(isset($ARK_CONFIG['autoload']['class'])){
+	ark_autoload_class($ARK_CONFIG['autoload']['class']);
 }
 
 //Capable with different platforms
@@ -51,7 +68,7 @@ ark('event')->bind('ark.404', 'ark_404');
 if(!isset($ARK_CONFIG['services']['view'])){
 	ark()->register('view', array(
 		'class' => 'AView',
-		'parameters' => array(
+		'params' => array(
 			array(
 				'dir' => APP_DIR.'/source/view',
 				'extract' => true,

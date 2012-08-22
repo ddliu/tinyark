@@ -8,7 +8,7 @@ function ark($name = null){
 	static $container;
 	if(null === $container){
 		$service_configs = ark_config('services', array());
-		$container = new PContainer($service_configs);
+		$container = new AContainer($service_configs);
 		
 		//register internal service
 		$container->set('event', new AEvent());
@@ -26,7 +26,7 @@ function ark($name = null){
 /**
  * Service container
  */
-class PContainer
+class AContainer
 {
     /**
      * service list
@@ -36,8 +36,8 @@ class PContainer
     
     protected $configs = array();
     
-    public function __construct($config = array()){
-        $this->services['config'] = $config;
+    public function __construct($configs = array()){
+        $this->configs = $configs;
     }
 
 	/**
@@ -73,13 +73,13 @@ class PContainer
                     if(isset($service_config['method'])){
                         $service = call_user_func_array(
                             $service_config['class'].'::'.$service_config['method'], 
-                            isset($service_config['parameters'])?$service_config['parameters']:array()
+                            isset($service_config['params'])?$service_config['params']:array()
                         );
                     }
                     else{
-                        if(isset($service_config['parameters'])){
+                        if(isset($service_config['params'])){
                             $r = new ReflectionClass($service_config['class']);
-                            $service = $r->newInstanceArgs($service_config['parameters']);
+                            $service = $r->newInstanceArgs($service_config['params']);
                         }
                         else{
                             $service = new $service_config['class'];
@@ -292,7 +292,8 @@ function ark_route($path, $config = null){
 	$params = array();
 	if($config){
 		foreach($config as $pattern => $target){
-			if(preg_match('#^'.$pattern.'$#', $path, $match)){
+			$pattern = '#^'.$pattern.'$#';
+			if(preg_match($pattern, $path, $match)){
 				foreach($match as $k => $v){
 					if(is_string($k)){
 						$params[$k] = $v;
@@ -304,29 +305,40 @@ function ark_route($path, $config = null){
 						'params' => $params,
 					);
 				}
-				$path = $target;
+				$path = preg_replace($pattern, $target, $path);
 				break;
 			}
 		}
 	}
 	
-	if(!preg_match('#^((?<c>\w+)/)?(?<a>\w+)?$#', $path, $match)){
+	if(!preg_match('#^(?<c>(\w+/)*)(?<a>\w+)?$#', $path, $match)){
 		return false;
 	}
 	return array(
-		'controller' => $match['c'] === null?'':$match['c'],
+		'controller' => rtrim($match['c'], '/'),
 		'action' => $match['a'] === null?'':$match['a'],
 		'params' => $params,
 	);
 }
 
+/**
+ * Dispatch
+ * @param array $r
+ */
 function ark_dispatch($r){//$controller, $action, $params){
+	//extract params for named pattern
 	if(isset($r['params'])){
 		foreach($r['params'] as $k => $v){
-			$_GET[$k] = $v;
+			if($_SERVER['REQUEST_METHOD'] == 'POST'){
+				$_POST[$k] = $v;
+			}
+			else{
+				$_GET[$k] = $v;
+			}
 			$_REQUEST[$k] = $v;
 		}
 	}
+	//callback handler
 	if(isset($r['handler'])){
 		call_user_func($r['handler']);
 		return true;
@@ -344,7 +356,8 @@ function ark_dispatch($r){//$controller, $action, $params){
 		ark('event')->trigger('ark.404');
 	}
 	else{
-		$classname = $r['controller'].'Controller';
+		require_once($controllerFile);
+		$classname = basename($r['controller']).'Controller';
 		$methodName = $r['action'].'Action';
 		$o = new $classname;
 		if(!method_exists($o, $methodName)){
@@ -356,6 +369,11 @@ function ark_dispatch($r){//$controller, $action, $params){
 	}
 }
 
+/**
+ * Add a route pattern with callback
+ * @param string $pattern
+ * @param callable $callback
+ */
 function ark_match($pattern, $callback){
 	global $ARK_CONFIG;
 	$ARK_CONFIG['route'][$pattern] = $callback;
