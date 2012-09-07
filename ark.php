@@ -422,6 +422,10 @@ function ark_url($path = '', $params = null){
 	return $url;
 }
 
+function ark_assets($path){
+	return APP_URL.$path;
+}
+
 function ark_event($event, $callback){
 	ark('event')->bind($event, $callback);
 }
