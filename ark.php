@@ -8,10 +8,10 @@ function ark($name = null){
 	static $container;
 	if(null === $container){
 		$service_configs = ark_config('services', array());
-		$container = new AContainer($service_configs);
+		$container = new ArkContainer($service_configs);
 		
 		//register internal service
-		$container->set('event', new AEvent());
+		$container->set('event', new ArkEvent());
 	}
 	
 	//return container if service not specified
@@ -26,7 +26,7 @@ function ark($name = null){
 /**
  * Service container
  */
-class AContainer
+class ArkContainer
 {
     /**
      * service list
@@ -100,7 +100,7 @@ class AContainer
     }
 }
 
-class AEvent
+class ArkEvent
 {
     protected $eventList = array();
 
@@ -135,7 +135,7 @@ class AEvent
 /**
  * Universal Autoloader
  */
-class AAutoload
+class ArkAutoload
 {
     static private $namespaces = array(
     );
@@ -433,14 +433,14 @@ function ark_event($event, $callback){
 function ark_autoload_class($class, $file = null){
 	if(is_array($class)){
 		foreach($class as $k => $v){
-			AAutoload::registerFile($k, $v);
+			ArkAutoload::registerFile($k, $v);
 		}
 	}
 	else{
-		AAutoload::registerFile($class, $file);
+		ArkAutoload::registerFile($class, $file);
 	}
 }
 
 function ark_autoload_dir($dir, $hasChild = true){
-	AAutoload::registerDir($dir, $hasChild);
+	ArkAutoload::registerDir($dir, $hasChild);
 }

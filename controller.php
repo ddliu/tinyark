@@ -2,7 +2,7 @@
 /**
  * Controller
  */
-class AController{
+class ArkController{
 	public function __construct(){
 		$this->init();
 	}

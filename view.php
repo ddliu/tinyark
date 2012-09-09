@@ -1,5 +1,5 @@
 <?php
-class AView
+class ArkView
 {
     private $helpers = array();
 
@@ -28,13 +28,13 @@ class AView
             $this->options = $options;
         }
         //register buildin helpers
-        $this->registerHelper('core', 'AViewCoreHelper');
-        $this->registerHelper('html', 'AViewHtmlHelper');
+        $this->registerHelper('core', 'ArkViewCoreHelper');
+        $this->registerHelper('html', 'ArkViewHtmlHelper');
         $this->startSession();
     }
 
     private function startSession(){
-        $this->sessions[] = new AViewSession();
+        $this->sessions[] = new ArkViewSession();
     }
 
     private function endSession(){
@@ -234,7 +234,7 @@ class AView
     }
 }
 
-class AViewSession
+class ArkViewSession
 {
     /**
      * Template variables
@@ -353,7 +353,7 @@ class AViewSession
     }
 }
 
-abstract class AViewHelper
+abstract class ArkViewHelper
 {
     protected $view;
 
@@ -365,7 +365,7 @@ abstract class AViewHelper
 /**
  * Core view helpers
  */
-class AViewCoreHelper extends AViewHelper
+class ArkViewCoreHelper extends ArkViewHelper
 {
     protected $captureVar = false;
     protected $captures = array();
@@ -481,7 +481,7 @@ class AViewCoreHelper extends AViewHelper
 	}
 }
 
-class AViewHtmlHelper extends AViewHelper
+class ArkViewHtmlHelper extends ArkViewHelper
 {
     public function htmlOptions($options, $value = null){
         foreach($options as $k=>$v){

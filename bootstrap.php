@@ -26,13 +26,14 @@ if(!defined('VENDOR_DIR')){
 require(dirname(__FILE__).'/ark.php');
 
 //autoload
-spl_autoload_register('AAutoload::load');
+spl_autoload_register('ArkAutoload::load');
 
 //register ark classes
 ark_autoload_class(array(
-	'AView' => ARK_DIR.'/view.php',
-	'AViewHelper' => ARK_DIR.'/view.php',
-	'AController' => ARK_DIR.'/controller.php'
+	'ArkView' => ARK_DIR.'/view.php',
+	'ArkViewHelper' => ARK_DIR.'/view.php',
+	'ArkController' => ARK_DIR.'/controller.php',
+	'ArkPagination' => ARK_DIR.'/pagination.php',
 ));
 
 //register app classes
@@ -67,7 +68,7 @@ if(isset($ARK_CONFIG['platform']) && in_array($ARK_CONFIG['platform'], array('sa
 ark('event')->bind('ark.404', 'ark_404');
 if(!isset($ARK_CONFIG['services']['view'])){
 	ark()->register('view', array(
-		'class' => 'AView',
+		'class' => 'ArkView',
 		'params' => array(
 			array(
 				'dir' => APP_DIR.'/source/view',
