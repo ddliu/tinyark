@@ -1,4 +1,8 @@
 <?php
+class Ark{
+	public static $configs;
+}
+
 /**
  * Get service
  * @param string $name Service name
@@ -375,8 +379,7 @@ function ark_dispatch($r){//$controller, $action, $params){
  * @param callable $callback
  */
 function ark_match($pattern, $callback){
-	global $ARK_CONFIG;
-	$ARK_CONFIG['route'][$pattern] = $callback;
+	Ark::$configs['route'][$pattern] = $callback;
 }
 
 /**
@@ -386,8 +389,7 @@ function ark_match($pattern, $callback){
  * @return mixed
  */
 function ark_config($key, $default = null){
-	global $ARK_CONFIG;
-	return isset($ARK_CONFIG[$key])?$ARK_CONFIG[$key]:$default;
+	return isset(Ark::$configs[$key])?Ark::$configs[$key]:$default;
 }
 
 /**

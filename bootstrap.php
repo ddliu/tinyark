@@ -44,29 +44,29 @@ $q = ark_parse_query_path();
 
 define('APP_URL','http://'.$_SERVER['HTTP_HOST'].$q['base'].'/');
 
-$ARK_CONFIG = include(APP_DIR . '/source/config.php');
-if(!$ARK_CONFIG){
-	$ARK_CONFIG = array();
+Ark::$configs = include(APP_DIR . '/source/config.php');
+if(!Ark::$configs){
+	Ark::$configs = array();
 }
 
 //autoload custom classes
-if(isset($ARK_CONFIG['autoload']['dir'])){
-	foreach($ARK_CONFIG['autoload']['dir'] as $dir){
+if(isset(Ark::$configs['autoload']['dir'])){
+	foreach(Ark::$configs['autoload']['dir'] as $dir){
 		ark_autoload_dir($dir);
 	}
 }
-if(isset($ARK_CONFIG['autoload']['class'])){
-	ark_autoload_class($ARK_CONFIG['autoload']['class']);
+if(isset(Ark::$configs['autoload']['class'])){
+	ark_autoload_class(Ark::$configs['autoload']['class']);
 }
 
 //Capable with different platforms
-if(isset($ARK_CONFIG['platform']) && in_array($ARK_CONFIG['platform'], array('sae'))){
-	require ARK_DIR.'/platform/'.$ARK_CONFIG['platform'].'.php';
+if(isset(Ark::$configs['platform']) && in_array(Ark::$configs['platform'], array('sae'))){
+	require ARK_DIR.'/platform/'.Ark::$configs['platform'].'.php';
 }
 
 //Setup default services and events
 ark('event')->bind('ark.404', 'ark_404');
-if(!isset($ARK_CONFIG['services']['view'])){
+if(!isset(Ark::$configs['services']['view'])){
 	ark()->register('view', array(
 		'class' => 'ArkView',
 		'params' => array(
