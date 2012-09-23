@@ -34,6 +34,11 @@ ark_autoload_class(array(
 	'ArkViewHelper' => ARK_DIR.'/view.php',
 	'ArkController' => ARK_DIR.'/controller.php',
 	'ArkPagination' => ARK_DIR.'/pagination.php',
+	'ArkCache' => ARK_DIR.'/cache.php',
+	'ArkCacheArray' => ARK_DIR.'/cache.php',
+	'ArkCacheFile' => ARK_DIR.'/cache.php',
+	'ArkCacheAPC' => ARK_DIR.'/cache.php',
+	'ArkCacheMemcache' => ARK_DIR.'/cache.php',
 ));
 
 //register app classes
