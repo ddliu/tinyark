@@ -1,5 +1,8 @@
 <?php
-abstract class ArkCache
+/**
+ * Cache base class
+ */
+abstract class ArkCacheBase
 {
 	/**
 	 * Cache options
@@ -14,10 +17,20 @@ abstract class ArkCache
 		$this->options = $options;
 	}
 	
+	/**
+	 * Key with prefix
+	 * @param string $key
+	 * @return string
+	 */
 	protected function getKey($key){
 		return (isset($this->options['prefix'])?$this->options['prefix']:'').$key;
 	}
 	
+	/**
+	 * Multi-key with prefix
+	 * @param array $keys
+	 * @return array
+	 */
 	protected function getMultiKey($keys){
 		$result = array();
 		foreach($keys as $key){
@@ -27,6 +40,11 @@ abstract class ArkCache
 		return $result;
 	}
 	
+	/**
+	 * Add prefix to keys of values
+	 * @param array $values
+	 * @return array
+	 */
 	protected function getMultiKV($values){
 		$result = array();
 		foreach($values as $key => $value){
@@ -36,6 +54,11 @@ abstract class ArkCache
 		return $result;
 	}
 	
+	/**
+	 * Remove prefix from keys of values
+	 * @param array $values
+	 * @return array
+	 */
 	protected function revertMultiKV($values){
 		if(!is_array($values)){
 			return $values;
@@ -67,7 +90,9 @@ abstract class ArkCache
 	}
 	
 	/**
-	 * TTL to timestamp
+	 * Timestamp to TTL
+	 * @param integer $expires
+	 * @return integer
 	 */
 	public function getTTL($expires){
 		if(!$expires){
@@ -113,24 +138,58 @@ abstract class ArkCache
 		}
 	}
 	
+	/**
+	 * Connect to the cache service
+	 * @return boolean
+	 */
 	protected function connect(){
 		return true;
 	}
 	
+	/**
+	 * Close connection to the cache service
+	 * @return boolean
+	 */
 	protected function close(){
 		return true;
 	}
 	
 	public function __destruct(){
+		//disconnect when destruct
 		$this->setConnected(false);
 	}
 	
+	/**
+	 * Get cache(multi-key supported)
+	 * @param string|array $key
+	 * @param mixed $options
+	 * @return mixed
+	 */
 	abstract public function get($key, $options = null);
 	
+	/**
+	 * Store cache data(multi-key supported)
+	 * @param string|array $key
+	 * @param mixed $value
+	 * @param integer $ttl
+	 * @param mixed $options
+	 * @return mixed
+	 */
 	abstract public function set($key, $value = null, $ttl = null, $options = null);
 	
+	/**
+	 * Remove cached data
+	 * @param string $key
+	 * @return boolean
+	 */
 	abstract public function delete($key);
 	
+	/**
+	 * Increment
+	 * @param string $key
+	 * @param integer $step
+	 * @return mixed
+	 */
 	public function inc($key, $step = 1){
 		if(false === $value = $this->get($key)){
 			return false;
@@ -140,10 +199,19 @@ abstract class ArkCache
 		return $value;
 	}
 	
+	/**
+	 * Decrement
+	 * @param string $key
+	 * @param integer $step
+	 * @return mixed
+	 */
 	public function dec($key, $step = 1){
 		return $this->inc($key, -$step);
 	}
 	
+	/**
+	 * Flush all cached data
+	 */
 	public function flush(){
 		return false;
 	}
@@ -152,10 +220,13 @@ abstract class ArkCache
 /**
  * Array cache
  */
-class ArkCacheArray extends ArkCache
+class ArkCacheArray extends ArkCacheBase
 {
 	protected $data = array();
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get($key, $options = array()){
 		if(is_array($key)){
 			$result = array();
@@ -170,6 +241,9 @@ class ArkCacheArray extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function set($key, $value = null, $ttl = null, $options = null){
 		if(is_array($key)){
 			foreach($key as $k => $v){
@@ -183,6 +257,9 @@ class ArkCacheArray extends ArkCache
 		return true;
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function delete($key){
 		if(isset($this->data[$key])){
 			unset($this->data[$key]);
@@ -191,6 +268,9 @@ class ArkCacheArray extends ArkCache
 		return true;
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function inc($key, $step = 1){
 		if(isset($this->data[$key])){
 			$this->data[$key] += $step;
@@ -201,6 +281,9 @@ class ArkCacheArray extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function flush(){
 		$this->data = array();
 	}
@@ -215,12 +298,22 @@ class ArkCacheArray extends ArkCache
  * ttl
  * data(serialized)
  */
-class ArkCacheFile extends ArkCache
+class ArkCacheFile extends ArkCacheBase
 {
+	/**
+	 * Get file path of the cache key
+	 * @param string $key
+	 * @return string
+	 */
 	protected function getCacheFile($key){
 		return $this->options['cache_dir'].'/'.(isset($this->options['prefix'])?$this->options['prefix']:'').md5($key).'.php';
 	}
 	
+	/**
+	 * Get cached data from file
+	 * @param string $file
+	 * @return mixed
+	 */
 	protected function readFileCache($file){
 		if(file_exists($file) && is_readable($file)){
 			$content = file_get_contents($file);
@@ -237,6 +330,13 @@ class ArkCacheFile extends ArkCache
 		}
 	}
 	
+	/**
+	 * Write data to file
+	 * @param string $file
+	 * @param mixed $data
+	 * @param integer $ttl
+	 * @param boolean
+	 */
 	protected function writeFileCache($file, $data, $ttl = null){
 		if(null === $ttl && isset($this->options['ttl'])){
 			$ttl = $this->options['ttl'];
@@ -247,6 +347,9 @@ class ArkCacheFile extends ArkCache
 		return file_put_contents($file, $content);
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get($key, $options = null){
 		if(is_array($key)){
 			$result = array();
@@ -262,6 +365,9 @@ class ArkCacheFile extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function set($key, $value = null, $ttl = null, $options = null){
 		if(is_array($key)){
 			$result = true;
@@ -286,6 +392,9 @@ class ArkCacheFile extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function delete($key){
 		$file = $this->getCacheFile($key);
 		if(file_exists($file)){
@@ -296,6 +405,9 @@ class ArkCacheFile extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function flush(){
 		$cache_dir = $this->options['cache_dir'];
 		if(!$dirh = opendir($cache_dir)){
@@ -337,10 +449,17 @@ class ArkCacheFile extends ArkCache
  *  - timeout
  * @todo multi-server support
  */
-class ArkCacheMemcache extends ArkCache
+class ArkCacheMemcache extends ArkCacheBase
 {
+	/**
+	 * @var Memcache
+	 * The memcache instance
+	 */
 	protected $memcache;
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	protected function connect(){
 		if(null === $this->memcache){
 			$this->memcache = new Memcache();
@@ -355,10 +474,16 @@ class ArkCacheMemcache extends ArkCache
 		return call_user_func_array(array($this->memcache, 'connect'), $params);
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	protected function close(){
 		return $this->memcache->close();
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get($key, $options = null){
 		if(!$this->setConnected()) return false;
 		
@@ -379,6 +504,9 @@ class ArkCacheMemcache extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function set($key, $value = null, $ttl = null, $options = null){
 		if(is_array($key)){
 			$rst = true;
@@ -395,23 +523,32 @@ class ArkCacheMemcache extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function delete($key){
 		if(!$this->setConnected()) return false;
 		return $this->memcache->delete($this->getKey($key));
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function inc($key, $step = 1){
 		$this->setConnected();
 		return $this->memcache->increment($this->getKey($key), $step);
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function dec($key, $step = 1){
 		$this->setConnected();
 		return $this->memcache->decrement($this->getKey($key), $step);
 	}
 	
 	/**
-	 * Flush all existing items at server(note that prefix will be ignored)
+	 * {@inheritdoc}
 	 */
 	public function flush(){
 		$this->setConnected();
@@ -422,8 +559,11 @@ class ArkCacheMemcache extends ArkCache
 /**
  * APC cache
  */
-class ArkCacheAPC extends ArkCache
+class ArkCacheAPC extends ArkCacheBase
 {
+	/**
+	 * {@inheritdoc}
+	 */
 	public function get($key, $options = null){
 		if(is_array($key)){
 			if(isset($this->options['prefix'])){
@@ -451,6 +591,9 @@ class ArkCacheAPC extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function set($key, $value = null, $ttl = null, $options = null){
 		if(is_array($key)){
 			if(isset($this->options['prefix'])){
@@ -468,20 +611,29 @@ class ArkCacheAPC extends ArkCache
 		}
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function delete($key){
 		return apc_delete($this->getKey($key));
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function inc($key, $step = 1){
 		return apc_inc($this->getKey($key), $step);
 	}
 	
+	/**
+	 * {@inheritdoc}
+	 */
 	public function dec($key, $step = 1){
 		return apc_dec($this->getKey($key), $step);
 	}
 	
 	/**
-	 * Clears the APC user cache(prefix will be ignored)
+	 * {@inheritdoc}
 	 */
 	public function flush(){
 		return apc_clear_cache('user');
