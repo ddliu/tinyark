@@ -1,5 +1,10 @@
 <?php
 /**
+ * @copyright Dong <ddliuhb@gmail.com>
+ * @licence http://maxmars.net/license/MIT
+ */
+
+/**
  * Cache base class
  */
 abstract class ArkCacheBase

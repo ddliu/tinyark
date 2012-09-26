@@ -1,5 +1,8 @@
 <?php
-error_reporting(E_ALL);
+/**
+ * @copyright Dong <ddliuhb@gmail.com>
+ * @licence http://maxmars.net/license/MIT
+ */
 require dirname(__FILE__).'/../cache.php';
 
 class CacheTest extends PHPUnit_Framework_TestCase{

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @copyright Dong <ddliuhb@gmail.com>
+ * @licence http://maxmars.net/license/MIT
+ */
+
 define('ARK_MICROTIME', microtime(true));
 define('ARK_TIMESTAMP', round(ARK_MICROTIME));
 if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
