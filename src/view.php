@@ -59,15 +59,15 @@ class ArkView
      * @return string
      */
     public function getViewFile($name){
-		$path = '';
-		if(isset($this->options['dir'])){
-			$path.=$this->options['dir'].'/';
-		}
-		
-		$path.=$name;
-		if(isset($this->options['ext'])){
-			$path.=$this->options['ext'];
-		}
+        $path = '';
+        if(isset($this->options['dir'])){
+            $path.=$this->options['dir'].'/';
+        }
+        
+        $path.=$name;
+        if(isset($this->options['ext'])){
+            $path.=$this->options['ext'];
+        }
         return $path;
     }
 
@@ -433,8 +433,8 @@ class ArkViewCoreHelper extends ArkViewHelper
     }
     
     public function beginCapture($var = null){
-		$this->capture($var);
-	}
+        $this->capture($var);
+    }
 
     /**
      * Finish capture block of content
@@ -474,16 +474,16 @@ class ArkViewCoreHelper extends ArkViewHelper
     }
     
     public function beginFilter($name){
-		$this->filter = $name;
-		$this->beginCapture('filter');
-	}
-	
-	public function endFilter(){
-		$this->endCapture();
-		$content = $this->getCapture('filter');
-		echo call_user_func($this->filter, $content);
-		$this->filter = null;
-	}
+        $this->filter = $name;
+        $this->beginCapture('filter');
+    }
+    
+    public function endFilter(){
+        $this->endCapture();
+        $content = $this->getCapture('filter');
+        echo call_user_func($this->filter, $content);
+        $this->filter = null;
+    }
 }
 
 class ArkViewHtmlHelper extends ArkViewHelper

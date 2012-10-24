@@ -1,0 +1,17 @@
+<phpunit
+    colors="true" 
+    backupGlobals="false" 
+    backupStaticAttributes="false" 
+    convertErrorsToExceptions="true"  
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    syntaxCheck="false"
+    processIsolation="false"
+    bootstrap="bootstrap.php.dist"
+>
+<testsuites>
+ <testsuite name="TinyArk Test Suite">
+  <directory>tests/</directory>
+ </testsuite>
+</testsuites>
+</phpunit>

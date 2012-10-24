@@ -91,12 +91,12 @@ class ArkPagination
     }
     
     public function setUrl($url){
-		$this->url = $url;
-	}
-	
-	public function getUrl($page){
-		return $this->url.$page;
-	}
+        $this->url = $url;
+    }
+    
+    public function getUrl($page){
+        return $this->url.$page;
+    }
 
     /**
      * $total getter
