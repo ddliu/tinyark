@@ -127,6 +127,8 @@ class ArkResponse
 {
     protected $headers = array();
 
+    protected $cookies = array();
+
     protected $version;
 
     protected $statusCode;

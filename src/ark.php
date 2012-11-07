@@ -68,6 +68,10 @@ abstract class ArkApp
         
         //get configuration
         Ark::$configs = $this->getConfigs();
+
+        if(isset(Ark::$configs['timezone'])){
+            date_default_timezone_set(Ark::$configs['timezone']);
+        }
         
         //Setup default services and events
         if(!isset(Ark::$configs['services']['view'])){
