@@ -24,14 +24,17 @@ class ArkView
     private $properties = array();
 
     protected $options = array(
-        'ext' => '.php',
-        'extract' => true, //extract variables
+        //'ext' => '.php',
+        //'extract' => true, //extract variables
     );
 
     public function __construct($options = null){
-        if(null !== $options){
-            $this->options = $options;
+        if(null === $options){
+            $options = array();
         }
+        $this->options = array_merge($options, array(
+            'extract' => true,
+        ));
         //register buildin helpers
         $this->registerHelper('core', 'ArkViewCoreHelper');
         $this->registerHelper('html', 'ArkViewHtmlHelper');
@@ -136,7 +139,8 @@ class ArkView
             throw new \LogicException('Block does not match');
         }
         $blockname = $currentSession->popBlock();
-        $content = ob_get_clean();
+        $content = ob_get_contents();
+        ob_end_clean();
         if(!$currentSession->hasBlock($blockname)){
             $currentSession->setBlock($blockname, $content);
         }
@@ -206,34 +210,48 @@ class ArkView
 
         $this->endSession();
         if($_return){
-            return ob_get_clean();
+            $content = ob_get_contents();
+            ob_end_clean();
+            return $content;
         }
     }
 
+    /**
+     * Render parents
+     */
     protected function renderInherits(){
         $currentSession = $this->getCurrentSession();
+
+        //has parents
         if($currentSession->hasInherits()){
+            //not top most parent
             if(!$currentSession->isTopLevel()){
                 ob_end_clean();
+                //get parent view name
                 $_viewName = $currentSession->getCurrentInherit();
+
                 $currentSession->incCurrentInheritLevel();
 
                 if($this->options['extract']){
                     extract($currentSession->getVariables(), EXTR_SKIP);
                 }
 
+                // render the parent view file
                 require($this->getViewFile($_viewName));
 
+                //block match check
                 if($currentSession->hasBlocks()){
                     throw new \LogicException('Block does not match');
                 }
                 
+                //render parents
                 $this->renderInherits();
             }
             else{
+                /*
                 if(ob_get_level()){
                     ob_end_flush();
-                }
+                }*/
             }
         }
     }
@@ -444,7 +462,8 @@ class ArkViewCoreHelper extends ArkViewHelper
         if(false === $this->captureVar){
             throw new Exception('Capture is not started');
         }
-        $data = ob_get_clean();
+        $data = ob_get_contents();
+        ob_end_clean();
         if(null === $this->captureVar){
             $this->captures[] = $data;
         }

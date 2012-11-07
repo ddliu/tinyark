@@ -28,13 +28,19 @@ class Ark
             ark_autoload_class(array(
                 'ArkView' => ARK_DIR.'/view.php',
                 'ArkViewHelper' => ARK_DIR.'/view.php',
+
                 'ArkController' => ARK_DIR.'/controller.php',
+
                 'ArkPagination' => ARK_DIR.'/pagination.php',
+
                 'ArkCacheBase' => ARK_DIR.'/cache.php',
                 'ArkCacheArray' => ARK_DIR.'/cache.php',
                 'ArkCacheFile' => ARK_DIR.'/cache.php',
                 'ArkCacheAPC' => ARK_DIR.'/cache.php',
                 'ArkCacheMemcache' => ARK_DIR.'/cache.php',
+
+                'ArkResponse' => ARK_DIR.'/http.php',
+                'ArkRequest' => ARK_DIR.'/http.php',
             ));
         }
     }
@@ -71,7 +77,7 @@ abstract class ArkApp
                     array(
                         'dir' => APP_DIR.'/source/view',
                         'extract' => true,
-                        'ext' => '.php',
+                        //'ext' => '.php',
                     )
                 )
             ));
@@ -138,11 +144,11 @@ class ArkAppWeb extends ArkApp
             error_reporting(0);
         }
         
+        parent::__construct();
+
         //parse request
         $q = ark_parse_query_path();
-        define('APP_URL','http://'.$_SERVER['HTTP_HOST'].$q['base'].'/');
-
-        parent::__construct();
+        define('APP_URL',ark('request')->getSchemeAndHttpHost().$q['base'].'/');
     }
     
     /**
@@ -175,18 +181,12 @@ class ArkAppWeb extends ArkApp
         //extract params for named pattern
         if(isset($r['params'])){
             foreach($r['params'] as $k => $v){
-                if($_SERVER['REQUEST_METHOD'] == 'POST'){
-                    $_POST[$k] = $v;
-                }
-                else{
-                    $_GET[$k] = $v;
-                }
-                $_REQUEST[$k] = $v;
+                ark('request')->setAttribute($k, $v);
             }
         }
         //callback handler
         if(isset($r['handler'])){
-            call_user_func($r['handler']);
+            call_user_func_array($r['handler'], array($r['params']));
             return true;
         }
 
@@ -210,7 +210,13 @@ class ArkAppWeb extends ArkApp
                 ark('event')->trigger('ark.404');
             }
             else{
-                call_user_func(array($o, $methodName));
+                $response = call_user_func(array($o, $methodName));
+                if ($response instanceof ArkResponse) {
+                    $response->prepare()->send();
+                }
+                elseif(null !== $response){
+                    echo $response;
+                }
             }
         }
     }
@@ -247,6 +253,10 @@ function ark($name = null){
         
         //register internal service
         $container->set('event', new ArkEvent());
+
+        $container->register('request', array(
+            'class' => 'ArkRequest'
+        ));
     }
     
     //return container if service not specified

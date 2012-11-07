@@ -8,7 +8,10 @@
  * Controller
  */
 class ArkController{
+    protected $request;
+    
     public function __construct(){
+        $this->request = ark('request');
         $this->init();
     }
     
@@ -19,8 +22,28 @@ class ArkController{
         ark('view')->assign($key, $value);
     }
     
-    public function render($name, $variables = null, $return = false){
-        return ark('view')->render($name, $variables, $return);
+    public function render($name, $variables = null, $statusCode = 200){
+        $basename = basename($name);
+        $parts = explode('.', $basename);
+        $parts_count = count($parts);
+        $format = null;
+        if($parts_count > 1){
+            if($parts[$parts_count - 1] == 'php'){
+                if($parts_count > 2){
+                    $format = strtolower($parts[$parts_count - 2]);
+                }
+            }
+            else{
+                $format = strtolower($parts[$parts_count - 1]);
+            }
+        }
+
+        $response = new ArkResponse(ark('view')->render($name, $variables, true), $statusCode);
+        $response->setCharset(ark_config('charset', 'UTF-8'));
+        if($format && $format != 'html' && $format != 'htm' && $content_type = ArkMimetype::getMimeTypeByFileExt($format)){
+            $response->header('Content-Type', $content_type);
+        }
+        return $response;
     }
     
     /**
