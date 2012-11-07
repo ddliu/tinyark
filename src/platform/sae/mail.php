@@ -4,7 +4,7 @@
  * @licence http://maxmars.net/license/MIT
  */
 
-abstract class ArkPlatformTaskqueue
+class ArkSaeMail extends ArkPlatformMail
 {
 
 }

@@ -1,4 +1,9 @@
 <?php
+/**
+ * @copyright Dong <ddliuhb@gmail.com>
+ * @licence http://maxmars.net/license/MIT
+ */
+
 class ArkSaeCacheMemcache extends ArkCacheMemcache
 {
     /**
@@ -6,6 +11,6 @@ class ArkSaeCacheMemcache extends ArkCacheMemcache
      */
     protected function connect()
     {   
-        $this->memcache = memcache_init();
+        return $this->memcache = memcache_init();
     }
 }
