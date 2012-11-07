@@ -5,3 +5,4 @@
  */
 require dirname(__FILE__).'/src/ark.php';
 Ark::autoload();
+date_default_timezone_set('Asia/Shanghai');

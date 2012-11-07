@@ -41,6 +41,9 @@ class Ark
 
                 'ArkResponse' => ARK_DIR.'/http.php',
                 'ArkRequest' => ARK_DIR.'/http.php',
+
+                'ArkLoggerBase' => ARK_DIR.'/logger.php',
+                'ArkLoggerFile' => ARK_DIR.'/logger.php',
             ));
         }
     }

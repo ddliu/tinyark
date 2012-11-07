@@ -3,10 +3,11 @@
  * @copyright Dong <ddliuhb@gmail.com>
  * @licence http://maxmars.net/license/MIT
  */
+
 class CacheTest extends PHPUnit_Framework_TestCase{
     protected $db;
     
-    public function backendTest($cache, $options = array()){return;
+    public function backendTest($cache, $options = array()){
         //set
         $result = $cache->set('key1', 'value1');
         $this->assertEquals($result, true);
