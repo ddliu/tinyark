@@ -17,7 +17,7 @@ class Ark
     /**
      * Autoload framework
      */
-    public static function autoload(){
+    public static function autoloadFramework(){
         static $registered;
         if(null === $registered){
             $registered = true;
@@ -49,6 +49,12 @@ class Ark
             ));
         }
     }
+
+    public static function renderInternal($template, $variables = null, $return = false){
+        $view = new ArkView();
+
+        return $view->render(ARK_DIR.'/internal/view/'.$template, $variables, $return);
+    }
 }
 
 /**
@@ -58,18 +64,12 @@ abstract class ArkApp
 {
     public function __construct(){
         //autoload
-        Ark::autoload();
+        Ark::autoloadFramework();
         
         //path definations
         if(!defined('APP_DIR')){
             define('APP_DIR', $this->getAppDir());
         }
-        if(!defined('SOURCE_DIR')){
-            define('SOURCE_DIR', $this->getSourceDir());
-        }
-        if(!defined('VENDOR_DIR')){
-            define('VENDOR_DIR', $this->getVendorDir());
-        }       
         
         //get configuration
         Ark::$configs = $this->getConfigs();
@@ -84,7 +84,7 @@ abstract class ArkApp
                 'class' => 'ArkView',
                 'params' => array(
                     array(
-                        'dir' => APP_DIR.'/source/view',
+                        'dir' => APP_DIR.'/view',
                         'extract' => true,
                         //'ext' => '.php',
                     )
@@ -113,25 +113,33 @@ abstract class ArkApp
      */
     abstract protected function init();
     
+
+    /**
+     * Get application dir
+     * 
+     * @return string
+     */
     public function getAppDir(){
-        return ARK_DIR.'/../../../..';
-    }
-    
-    public function getSourceDir(){
-        return $this->getAppDir().'/source';
-    }
-    
-    public function getVendorDir(){
-        return $this->getSourceDir().'/vendor';
+        return $this->getPath();
     }
     
     public function getConfigFile(){
-        return $this->getSourceDir().'/config.php';
+        return $this->getAppDir().'/config.php';
     }
     
     public function getConfigs(){
-        $configs = include($this->getSourceDir().'/config.php');
+        $configs = include($this->getConfigFile());
         return is_array($configs)?$configs:array();
+    }
+
+    protected function getPath(){
+        static $dir;
+        if(null === $dir){
+            $reflected = new \ReflectionObject($this);
+            $dir = dirname($reflected->getFileName());
+        }
+
+        return $dir;
     }
 
     /**
@@ -206,7 +214,7 @@ class ArkAppWeb extends ArkApp
             $r['action'] = 'index';
         }
 
-        $controllerFile = APP_DIR.'/source/controller/'.$r['controller'].'Controller.php';
+        $controllerFile = APP_DIR.'/controller/'.$r['controller'].'Controller.php';
         if(!file_exists($controllerFile)){
             ark('event')->trigger('ark.404');
         }
@@ -486,11 +494,7 @@ class ArkAutoload
  */
 function ark_404(){
     header("HTTP/1.0 404 Not Found");
-    $file = APP_DIR.'/404.php';
-    if(file_exists($file)){
-        require($file);
-    }
-    
+    Ark::renderInternal('404.html.php');    
     exit;
 }
 

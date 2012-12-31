@@ -47,43 +47,14 @@ class ArkController{
     }
     
     /**
-     * Send data with json result
-     * @param int $errcode
-     *  - 0: ok
-     *  - 400: bad request
-     *      - 40001: param error
-     *  - 401: not authorized
-     *  - 403: forbidden
-     *  - 500: internal server error
-     * @param string $message
-     * @author dong
-     */
-    public function result($errcode=0,$message=null,$data=null){
-        header('Content-type: application/json');
-        echo json_encode(array(
-            'code'=>$errcode,
-            'msg'=>$message,
-            'data'=>$data,
-        ));
-        exit;
-    }
-    
-    /**
      * Output json data
      * @param mixed $data
-     * @param boolean $formated is data formated
      */
-    public function renderJson($data, $formated = true){
+    public function renderJson($data){
         header('Content-type: application/json');
-        if(is_string($data) && $formated){
-            echo $data;
-        }
-        else{
-            echo json_encode($data);
-        }
-        exit;
+        echo json_encode($data);
     }
-    
+
     /**
      * Redirect
      * @param string $url
@@ -93,13 +64,10 @@ class ArkController{
         exit;
     }
     
-    public function forward($r, $params){
-    }
-    
     /**
      * Check request method
      */
     public function isPost(){
-        return $_SERVER['REQUEST_METHOD'] == 'POST';
+        return $_SERVER['REQUEST_METHOD'] === 'POST';
     }
 }

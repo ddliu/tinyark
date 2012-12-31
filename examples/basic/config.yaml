@@ -1,0 +1,3 @@
+handle:
+	- hostaccess: if(path ~ "^/source\/") deny "all"
+	- rewrite: if(!is_file()) goto "/index.php"
