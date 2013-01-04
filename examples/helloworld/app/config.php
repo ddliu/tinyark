@@ -2,8 +2,9 @@
 return array(
 	'charset' => 'utf-8',
 	'timezone' => 'Asia/Shanghai',
+	'rewrite' => false,
 	'route' => array(
-		'blog/(?<blog_id>\d+)\.html' => 'default/blog',
+		'blog/(?<blog_id>\d+)\-(?<blog_slug>\w+)\.html' => 'default/blog',
 		'about\.html' => 'default/about',
 		'contact\.html' => 'default/contact',
 		//RESTful URL

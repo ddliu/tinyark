@@ -11,7 +11,7 @@ class ArkController{
     protected $request;
     
     public function __construct(){
-        $this->request = ark('request');
+        $this->request = Ark::app()->getRequest();
         $this->init();
     }
     

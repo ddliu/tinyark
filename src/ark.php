@@ -4,11 +4,17 @@
  * @licence http://maxmars.net/license/MIT
  */
 
+/**
+ * This is the bootstrap file for the framework
+ */
+
 define('ARK_MICROTIME', microtime(true));
 define('ARK_TIMESTAMP', round(ARK_MICROTIME));
 
-//Path defination
+//Path of the framework
 define( 'ARK_DIR' , dirname(__FILE__));
+
+require_once(ARK_DIR.'/utils.php');
 
 class Ark
 {
@@ -25,7 +31,7 @@ class Ark
             spl_autoload_register('ArkAutoload::load');
 
             //register ark classes
-            ark_autoload_class(array(
+            ArkAutoload::registerFile(array(
                 'ArkView' => ARK_DIR.'/view.php',
                 'ArkViewHelper' => ARK_DIR.'/view.php',
 
@@ -47,13 +53,25 @@ class Ark
 
                 'ArkHttpClient' => ARK_DIR.'/httpclient.php',
             ));
+
         }
     }
 
+    /**
+     * Render internal templates
+     * @param  String  $template
+     * @param  mixed  $variables
+     * @param  boolean $return
+     * @return mixed
+     */
     public static function renderInternal($template, $variables = null, $return = false){
         $view = new ArkView();
 
         return $view->render(ARK_DIR.'/internal/view/'.$template, $variables, $return);
+    }
+
+    public static function app(){
+        return ArkApp::$instance;
     }
 }
 
@@ -62,7 +80,15 @@ class Ark
  */
 abstract class ArkApp
 {
+    protected $container;
+
+    public $configs;
+
+    public static $instance;
+
     public function __construct(){
+        self::$instance = $this;
+
         //autoload
         Ark::autoloadFramework();
         
@@ -71,48 +97,64 @@ abstract class ArkApp
             define('APP_DIR', $this->getAppDir());
         }
         
-        //get configuration
-        Ark::$configs = $this->getConfigs();
+        $this->loadConfigs();
 
-        if(isset(Ark::$configs['timezone'])){
-            date_default_timezone_set(Ark::$configs['timezone']);
+        //Set default timezone
+        if(isset($this->configs['timezone'])){
+            date_default_timezone_set($this->configs['timezone']);
         }
+
+        //Service container
+        $this->container = new ArkContainer(isset($this->configs['services'])?$this->configs['services']:array());
         
         //Setup default services and events
-        if(!isset(Ark::$configs['services']['view'])){
-            ark()->register('view', array(
+        //View
+        if(!isset($this->configs['services']['view'])){
+            $this->container->register('view', array(
                 'class' => 'ArkView',
                 'params' => array(
                     array(
-                        'dir' => APP_DIR.'/view',
+                        'dir' => $this->getAppDir().'/view',
                         'extract' => true,
                         //'ext' => '.php',
                     )
                 )
             ));
         }
+
+        //Event dispatcher
+        if(!isset($this->configs['services']['event'])){
+            $this->container->register('event', array(
+                'class' => 'ArkEvent',
+            ));
+        }
         
         //autoload custom classes
-        if(isset(Ark::$configs['autoload']['dir'])){
-            foreach(Ark::$configs['autoload']['dir'] as $dir){
-                ark_autoload_dir($dir);
+        if(isset($this->configs['autoload']['dir'])){
+            foreach($this->configs['autoload']['dir'] as $dir){
+                ArkAutoload::registerDir($dir);
             }
         }
-        if(isset(Ark::$configs['autoload']['class'])){
-            ark_autoload_class(Ark::$configs['autoload']['class']);
+
+        if(isset($this->configs['autoload']['file'])){
+            ArkAutoload::registerFile($this->configs['autoload']['file']);
         }
         
         $this->init();
         
         //app is ready
-        ark('event')->trigger('ark.ready');
+        $this->container->get('event')->trigger('ark.ready');
     }
     
     /**
      * Init app
      */
     abstract protected function init();
-    
+
+    public function getContainer()
+    {
+        return $this->container;
+    }
 
     /**
      * Get application dir
@@ -127,9 +169,21 @@ abstract class ArkApp
         return $this->getAppDir().'/config.php';
     }
     
-    public function getConfigs(){
+    public function loadConfigs(){
         $configs = include($this->getConfigFile());
-        return is_array($configs)?$configs:array();
+        $this->configs = is_array($configs)?$configs:array();
+
+        return $this;
+    }
+
+    public function getConfig($key, $default = null)
+    {
+        if(isset($this->configs[$key])){
+            return $this->configs[$key];
+        }
+        else{
+            return $default;
+        }
     }
 
     protected function getPath(){
@@ -153,6 +207,8 @@ abstract class ArkApp
  */
 class ArkAppWeb extends ArkApp
 {
+    protected $request;
+
     public function __construct(){
         if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
             error_reporting(E_ALL^E_NOTICE);
@@ -163,16 +219,23 @@ class ArkAppWeb extends ArkApp
         
         parent::__construct();
 
+        $this->request = new ArkRequest();
+
         //parse request
         $q = ark_parse_query_path();
-        define('APP_URL',ark('request')->getSchemeAndHttpHost().$q['base'].'/');
+        define('APP_URL',$this->request->getSchemeAndHttpHost().$q['base'].'/');
+    }
+
+    public function getRequest()
+    {
+        return $this->request;
     }
     
     /**
      * {@inheritdoc}
      */
     protected function init(){
-        ark('event')->bind('ark.404', 'ark_404');
+        $this->container->get('event')->bind('ark.404', 'ark_404');
     }
     
     /**
@@ -180,14 +243,14 @@ class ArkAppWeb extends ArkApp
      */
     public function run(){
         $q = ark_parse_query_path();
-        if(!$r = ark_route($q['path'], ark_config('route'))){
-            ark('event')->trigger('ark.404');
+        if(!$r = ark_route($q['path'], $this->getConfig('route'))){
+            $this->container->get('event')->trigger('ark.404');
         }
         else{
-            ark('event')->trigger('ark.dispatch');
+            $this->container->get('event')->trigger('ark.dispatch');
             $this->dispatch($r);
         }
-        ark('event')->trigger('ark.shutdown');
+        $this->container->get('event')->trigger('ark.shutdown');
     }
     
     /**
@@ -198,43 +261,49 @@ class ArkAppWeb extends ArkApp
         //extract params for named pattern
         if(isset($r['params'])){
             foreach($r['params'] as $k => $v){
-                ark('request')->setAttribute($k, $v);
+                $this->request->setAttribute($k, $v);
             }
         }
+
+        
+
+        $handler = null;
+        $handler_params = null;
         //callback handler
         if(isset($r['handler'])){
-            call_user_func_array($r['handler'], array($r['params']));
-            return true;
-        }
-
-        if($r['controller'] === ''){
-            $r['controller'] = 'default';
-        }
-        if($r['action'] === ''){
-            $r['action'] = 'index';
-        }
-
-        $controllerFile = APP_DIR.'/controller/'.$r['controller'].'Controller.php';
-        if(!file_exists($controllerFile)){
-            ark('event')->trigger('ark.404');
+            $handler = $r['handler'];
+            $handler_params = ark_handler_params($handler, $r['params']);
         }
         else{
-            require_once($controllerFile);
-            $classname = basename($r['controller']).'Controller';
-            $methodName = $r['action'].'Action';
-            $o = new $classname;
-            if(!method_exists($o, $methodName)){
-                ark('event')->trigger('ark.404');
+            if($r['controller'] === ''){
+                $r['controller'] = 'default';
             }
-            else{
-                $response = call_user_func(array($o, $methodName));
-                if ($response instanceof ArkResponse) {
-                    $response->prepare()->send();
-                }
-                elseif(null !== $response){
-                    echo $response;
+            if($r['action'] === ''){
+                $r['action'] = 'index';
+            }
+            $controllerFile = $this->getAppDir().'/controller/'.$r['controller'].'Controller.php';
+            if(file_exists($controllerFile)){
+                require_once($controllerFile);
+                $classname = basename($r['controller']).'Controller';
+                $methodName = $r['action'].'Action';
+                $o = new $classname;
+                if(method_exists($o, $methodName)){
+                    $handler = array($o, $methodName);
+                    $handler_params = ark_handler_params($classname.'::'.$methodName, $r['params']);
                 }
             }
+        }
+        if(null !== $handler){
+            $response = call_user_func_array($handler, $handler_params);
+            if ($response instanceof ArkResponse) {
+                $response->prepare()->send();
+            }
+            elseif(null !== $response){
+                echo $response;
+            }
+        }
+        else{
+            $this->container->get('event')->trigger('ark.404');
         }
     }
 }
@@ -256,34 +325,6 @@ class ArkAppConsole extends ArkApp
     public function run(){
     }
 }
-
-/**
- * Get service
- * @param string $name Service name
- * @return mixed
- */
-function ark($name = null){
-    static $container;
-    if(null === $container){
-        $service_configs = ark_config('services', array());
-        $container = new ArkContainer($service_configs);
-        
-        //register internal service
-        $container->set('event', new ArkEvent());
-
-        $container->register('request', array(
-            'class' => 'ArkRequest'
-        ));
-    }
-    
-    //return container if service not specified
-    if(null === $name){
-        return $container;
-    }
-    
-    return $container->get($name);
-}
-
 
 /**
  * Service container
@@ -451,8 +492,15 @@ class ArkAutoload
         }
     }
 
-    static public function registerFile($class, $file){
-        self::$files[$class] = $file;
+    static public function registerFile($class, $file = null){
+        if(is_array($class)){
+            foreach($class as $k => $v){
+                self::$files[$k] = $v;
+            }
+        }
+        else{
+            self::$files[$class] = $file;
+        }
     }
     
     static public function loadFile($name){
@@ -484,171 +532,4 @@ class ArkAutoload
         
         return false;
     }
-}
-
-#Shortcut functions
-
-
-/**
- * 404 page
- */
-function ark_404(){
-    header("HTTP/1.0 404 Not Found");
-    Ark::renderInternal('404.html.php');    
-    exit;
-}
-
-function ark_parse_query_path(){
-    static $q;
-    if(null === $q){
-        $q = array();
-        $script_name = $_SERVER['SCRIPT_NAME'];
-        $script_name_length = strlen($script_name);
-
-        $request_uri = $_SERVER['REQUEST_URI'];
-
-        $slash_pos = strrpos($script_name, '/');
-        $base = substr($script_name, 0, $slash_pos);
-        $q['base'] = $base;
-
-        //is script name in uri?
-        if(substr($request_uri, 0, $script_name_length) == $script_name){
-            if(
-                !isset($request_uri[$script_name_length]) 
-                || 
-                in_array($request_uri[$script_name_length], array('/', '?'))
-            ){
-                $request_basename = basename($script_name);
-            }
-        }
-        else{
-            $request_basename = null;
-        }
-
-        $urlinfo = parse_url($request_uri);
-        
-        if(null === $request_basename && !isset($_GET['r'])){
-            $info = substr($urlinfo['path'], $slash_pos + 1);
-        }
-        else{
-            $info = isset($_GET['r'])?$_GET['r']:'';
-        }
-
-        $q['path'] = $info;
-    }
-    return $q;
-}
-
-
-/**
- * Route
- * @param string $path
- * @param array $config
- * @return array|boolean
- */
-function ark_route($path, $config = null){
-    $params = array();
-    if($config){
-        foreach($config as $pattern => $target){
-            $pattern = '#^'.$pattern.'$#';
-            if(preg_match($pattern, $path, $match)){
-                foreach($match as $k => $v){
-                    if(is_string($k)){
-                        $params[$k] = $v;
-                    }
-                }
-                if(!is_string($target)){
-                    return array(
-                        'handler' => $target,
-                        'params' => $params,
-                    );
-                }
-                $path = preg_replace($pattern, $target, $path);
-                break;
-            }
-        }
-    }
-    
-    if(!preg_match('#^(?<c>(\w+/)*)(?<a>\w+)?$#', $path, $match)){
-        return false;
-    }
-    return array(
-        'controller' => rtrim($match['c'], '/'),
-        'action' => $match['a'] === null?'':$match['a'],
-        'params' => $params,
-    );
-}
-
-/**
- * Add a route pattern with callback
- * @param string $pattern
- * @param callable $callback
- */
-function ark_match($pattern, $callback){
-    Ark::$configs['route'][$pattern] = $callback;
-}
-
-/**
- * Get config
- * @param string $key
- * @param mixed $default
- * @return mixed
- */
-function ark_config($key, $default = null){
-    return isset(Ark::$configs[$key])?Ark::$configs[$key]:$default;
-}
-
-/**
- * Generate url
- * @param string $path
- * @param mixed $params
- * @return string
- */
-function ark_url($path = '', $params = null){
-    $url = APP_URL;
-    $rewrite = ark_config('rewrite', true);
-    if($path !== ''){
-        if($rewrite){
-            $url.=$path;
-        }
-        else{
-            $url.='?r='.$path;
-        }
-    }
-    if(null !== $params){
-        if(is_array($params)){
-            $params = http_build_query($params);
-        }
-        if($rewrite){
-            $url.='?'.$params;
-        }
-        else{
-            $url.='&'.$params;
-        }
-    }
-    
-    return $url;
-}
-
-function ark_assets($path){
-    return APP_URL.$path;
-}
-
-function ark_event($event, $callback){
-    ark('event')->bind($event, $callback);
-}
-
-function ark_autoload_class($class, $file = null){
-    if(is_array($class)){
-        foreach($class as $k => $v){
-            ArkAutoload::registerFile($k, $v);
-        }
-    }
-    else{
-        ArkAutoload::registerFile($class, $file);
-    }
-}
-
-function ark_autoload_dir($dir, $hasChild = true){
-    ArkAutoload::registerDir($dir, $hasChild);
 }
