@@ -32,6 +32,8 @@ class Ark
 
             //register ark classes
             ArkAutoload::registerFile(array(
+                'ArkConfig' => ARK_DIR.'/config.php',
+
                 'ArkView' => ARK_DIR.'/view.php',
                 'ArkViewHelper' => ARK_DIR.'/view.php',
 
@@ -163,6 +165,11 @@ abstract class ArkApp
      */
     public function getAppDir(){
         return $this->getPath();
+    }
+
+    protected function loadBundles()
+    {
+        
     }
     
     public function getConfigFile(){
