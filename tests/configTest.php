@@ -92,6 +92,15 @@ class ConfigTest extends PHPUnit_Framework_TestCase{
         $this->assertContains('another', $this->config->get());
     }
 
+    public function testAppend()
+    {
+        $this->config->append(null, 'another');
+        $this->assertContains('another', $this->config->get());
+
+        $this->config->append('users', 'userx');
+        $this->assertContains('userx', $this->config->get('users'));
+    }
+
     public function testRefference()
     {
         $this->assertFalse($this->config->has('database.driver'));

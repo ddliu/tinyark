@@ -114,6 +114,29 @@ class ArkConfig
     }
 
     /**
+     * Append
+     * @param  string|null $key
+     * @param  mixed $value
+     * @return ArkConfig
+     */
+    public function append($key, $value)
+    {
+        $array = &$this->configs;
+        if(null !== $key && '' !== $key){
+            foreach(explode('.', $key) as $segment){
+                if(!isset($array[$segment]) || !is_array($array[$segment])){
+                    $array[$segment] = array();
+                }
+                $array = &$array[$segment];
+            }
+        }
+
+        $array[] = $value;
+
+        return $this;
+    }
+
+    /**
      * Remove config
      * @param  string $key
      */
