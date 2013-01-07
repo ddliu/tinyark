@@ -207,3 +207,21 @@ function ark_autoload_file($class, $file = null){
 function ark_autoload_dir($dir, $hasChild = true){
     ArkAutoload::registerDir($dir, $hasChild);
 }
+
+# io access
+
+function ark_sub_dirs($path){
+    if(!$dirh = opendir($path)){
+        return false;
+    }
+
+    $dirs = array();
+    while($file = readdir($dirh) !== false){
+        if($file !== '.' && $file !== '..' && is_dir($path.'/'.$file)){
+            $dirs[] = $file;
+        }
+    }
+
+    closedir($dirh);
+    return $dirs;
+}
