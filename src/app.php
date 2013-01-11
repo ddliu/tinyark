@@ -1,7 +1,11 @@
 <?php
 /**
- * @copyright Dong <ddliuhb@gmail.com>
- * @licence http://maxmars.net/license/MIT
+ * Tinyark Framework
+ *
+ * @package   Tinyark
+ * @author    Dong <ddliuhb@gmail.com>
+ * @copyright 2013 Dong <ddliuhb@gmail.com>
+ * @license   Licensed under the MIT license(http://maxmars.net/license/MIT)
  */
 
 /**
@@ -11,22 +15,33 @@ abstract class ArkApp
 {
     protected $container;
 
+    protected $bundles;
+
+    protected $registeredBundleInfo = array();
+
     public $config;
 
     public static $instance;
 
-    public function __construct(){
+    public $event;
+
+    public function __construct()
+    {
+        $this->event = new ArkEvent();
+
+        $this->event->trigger('app.before');
+
         self::$instance = $this;
         
         //path definations
-        if(!defined('APP_DIR')){
+        if (!defined('APP_DIR')) {
             define('APP_DIR', $this->getAppDir());
         }
         
         $this->loadConfigs();
 
         //Set default timezone
-        if($this->config->has('timezone')){
+        if ($this->config->has('timezone')) {
             date_default_timezone_set($this->config->get('timezone'));
         }
 
@@ -35,32 +50,30 @@ abstract class ArkApp
         
         //Setup default services and events
         //View
-        if(!$this->config->has('service.view')){
-            $this->container->register('view', array(
-                'class' => 'ArkView',
-                'params' => array(
-                    array(
-                        'dir' => $this->getAppDir().'/view',
-                        'extract' => true,
-                        //'ext' => '.php',
+        if (!$this->config->has('service.view')) {
+            $this->container->register(
+                'view',
+                array(
+                    'class' => 'ArkView',
+                    'params' => array(
+                        array(
+                            'dir' => $this->getAppDir().'/view',
+                            'extract' => true,
+                            //'ext' => '.php',
+                        )
                     )
                 )
-            ));
+            );
         }
 
-        //Event dispatcher
-        $this->container->register('event', array(
-            'class' => 'ArkEvent',
-        ));
-        
         //autoload custom classes
-        if($this->config->has('autoload.dir')){
-            foreach($this->config->get('autoload.dir') as $dir){
+        if ($this->config->has('autoload.dir')) {
+            foreach ($this->config->get('autoload.dir') as $dir) {
                 ArkAutoload::registerDir($dir);
             }
         }
 
-        if($this->config->has('autoload.file')){
+        if ($this->config->has('autoload.file')) {
             ArkAutoload::registerFile($this->config->get('autoload.file'));
         }
 
@@ -70,7 +83,7 @@ abstract class ArkApp
         $this->init();
         
         //app is ready
-        $this->container->get('event')->trigger('ark.ready');
+        $this->event->trigger('app.ready');
     }
     
     /**
@@ -88,7 +101,8 @@ abstract class ArkApp
      * 
      * @return string
      */
-    public function getAppDir(){
+    public function getAppDir()
+    {
         return $this->getPath();
     }
 
@@ -100,25 +114,7 @@ abstract class ArkApp
     protected function loadBundles()
     {
         foreach($this->config->get('bundle.bundles', array()) as $v){
-            if(is_string($v)){
-                if(preg_match('#^[a-zA-Z0-9_]$#', $v)){
-                    //name
-                    $this->addBundle($v);
-                }
-                else{
-                    //path
-                    $this->addBundle(null, $v);
-                }
-            }
-            elseif(is_array($v)){
-                $this->addBundle(
-                    isset($v['name'])?$v['name']:null, 
-                    isset($v['path'])?$v['path']:null,
-                    isset($v['start'])?$v['start']:true
-                );
-            }else{
-                continue;
-            }
+            $this->addBundle($v);
         }
 
         //auto discover
@@ -131,39 +127,82 @@ abstract class ArkApp
         }
     }
 
-    /**
-     * Add a bundle
-     * @param string|null  $name
-     * @param string|null  $path
-     * @param boolean $start
-     * @return boolean
-     */
-    public function addBundle($name, $path, $start = true)
+    public function addBundle($v)
     {
-        if(null === $name && null === $path){
-            return false;
+        if(is_string($v)){
+            if(preg_match('#^[a-zA-Z0-9_]$#', $v)){
+                //name
+                $this->registerBundleInfo($v);
+            }
+            else{
+                //path
+                $this->registerBundleInfo(null, $v);
+            }
         }
+        elseif(is_array($v)){
+            $name = $this->registerBundleInfo(
+                isset($v['name'])?$v['name']:null, 
+                isset($v['path'])?$v['path']:null,
+                isset($v['configs'])?$v['configs']:null
+            );
+            if(isset($v['start']) && $v['start']){
+                $this->loadBundle($name);
+            }
+        }else{
+            throw new Exception('Invalid bundle info');
+        }
+    }
 
-        if(null === $name){
-            $name = dirname($path);
-        }
-        elseif(null === $path){
-            $path = $this.getBundleDir().'/'.$name;
-        }
-
-        if(!isset($this->bundles[$name])){
-            if(!file_exists($path.'/bundle.php')){
+    public function registerBundleInfo($name, $path = null, $configs = null)
+    {
+        if(!isset($this->registeredBundleInfo[$name])){
+            if(null === $name && null === $path){
                 return false;
             }
 
-            require $path.'/bundle.php';
-            $classname = str_replace(' ', '', ucwords(str_replace('_', ' ', $name))).'Bundle';
-            $this->bundles[$name] = new $classname();
+            if(null === $name){
+                $name = dirname($path);
+            }
+            elseif(null === $path){
+                $path = $this->getBundleDir().'/'.$name;
+            }
 
-            return true;
+            $this->registeredBundleInfo[$name] = array(
+                'path' => $path,
+                'configs' => $configs,
+            );
+        }
+
+        return $name;
+    }
+
+    public function getBundle($name)
+    {
+        if($this->loadBundle($name)){
+            return $this->bundles[$name];
         }
 
         return false;
+    }
+
+    public function loadBundle($name)
+    {
+        if(!isset($this->bundles[$name])){
+            if(!isset($this->registeredBundleInfo[$name])){
+                return false;
+            }
+
+            $info = $this->registeredBundleInfo[$name];
+            if(!file_exists($info['path'].'/bundle.php')){
+                return false;
+            }
+
+            require($info['path'].'/bundle.php');
+            $classname = str_replace(' ', '', ucwords(str_replace('_', ' ', $name))).'Bundle';
+            $this->bundles[$name] = new $classname($this, $info['configs']);
+        }
+
+        return true;
     }
     
     public function getConfigFile(){
@@ -207,10 +246,12 @@ class ArkAppWeb extends ArkApp
 
     public function __construct(){
         if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
+            ini_set('display_errors', 1);
             error_reporting(E_ALL^E_NOTICE);
         }
         else{
-            error_reporting(0);
+            ini_set('display_errors', 0);
+            error_reporting(~E_NOTICE);
         }
         
         parent::__construct();
@@ -231,7 +272,7 @@ class ArkAppWeb extends ArkApp
      * {@inheritdoc}
      */
     protected function init(){
-        $this->container->get('event')->bind('ark.404', 'ark_404');
+        $this->event->bind('app.404', 'ark_404');
     }
     
     /**
@@ -239,8 +280,10 @@ class ArkAppWeb extends ArkApp
      */
     public function run(){
         $q = ark_parse_query_path();
+
+        $this->event->trigger('app.dispatch', $q);
         if(!$r = ark_route($q['path'], $this->config->get('route.rules'))){
-            $this->container->get('event')->trigger('ark.404');
+            $this->event->trigger('app.404');
         }
         else{
             $this->container->get('event')->trigger('ark.dispatch');

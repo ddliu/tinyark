@@ -33,6 +33,10 @@ class RouterTest extends PHPUnit_Framework_TestCase{
                 'name' => 'blog_tag',
                 'path' => 'blog/tag/<slug>',
                 'target' => 'target_blog_tag',
+            ),
+            array(
+                'name' => 'cli',
+                'path' => 'cache:clear:<bundle:\w+>',
             )
         ));
     }
@@ -75,6 +79,11 @@ class RouterTest extends PHPUnit_Framework_TestCase{
             'path' => 'blog/tag/php.html',
         ));
         $this->assertFalse($rule);
+
+        $rule = $this->router->match(array(
+            'path' => 'cache:clear:blog'
+        ));
+        $this->assertEquals($rule['attrubutes']['bundle'], 'blog');
     }
 
     public function testGenerate()
