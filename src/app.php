@@ -2,10 +2,9 @@
 /**
  * Tinyark Framework
  *
- * @package   Tinyark
- * @author    Dong <ddliuhb@gmail.com>
- * @copyright 2013 Dong <ddliuhb@gmail.com>
- * @license   Licensed under the MIT license(http://maxmars.net/license/MIT)
+ * @copyright Copyright 2012-2013, Dong <ddliuhb@gmail.com>
+ * @link http://maxmars.net/projects/tinyark Tinyark project
+ * @license MIT License (http://maxmars.net/license/MIT)
  */
 
 /**
@@ -273,6 +272,7 @@ class ArkAppWeb extends ArkApp
      */
     protected function init(){
         $this->event->bind('app.404', 'ark_404');
+        
     }
     
     /**

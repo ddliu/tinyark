@@ -1,7 +1,10 @@
 <?php
 /**
- * @copyright Dong <ddliuhb@gmail.com>
- * @licence http://maxmars.net/license/MIT
+ * Tinyark Framework
+ *
+ * @copyright Copyright 2012-2013, Dong <ddliuhb@gmail.com>
+ * @link http://maxmars.net/projects/tinyark Tinyark project
+ * @license MIT License (http://maxmars.net/license/MIT)
  */
 
 /**
@@ -9,6 +12,7 @@
  */
 class ArkBundle
 {
+    protected $dependencies;
     protected $app;
     protected $reflected;
     protected $started = false;
@@ -16,33 +20,34 @@ class ArkBundle
     protected $name;
     public $config;
 
-    public function __construct($app = null, $start = true)
+    public function __construct($app, $configs = null)
     {
-        if(null !== $app){
-            $this->app = $app;
-        }
+        $app->
+        $this->app = $app;
 
         $this->loadConfig();
-
-        if($start){
-            $this->start();
+        if(null !== $configs){
+            $this->config->merge($configs);
         }
-    }
 
-    /**
-     * Start bundle
-     */
-    public function start()
-    {
-        if(!$this->started){
-            $this->init();
-            if($this->app->isCli()){
-                $this->initCli();
+        //dependencies
+        if($dependencies = $this->getDependencies()){
+            foreach($dependencies as $v){
+                $this->app->addBundle($v);
             }
-            else{
-                $this->initWeb();
-            }
-            $this->started = true;
+        }
+
+
+
+        $this->init();
+        if($this->app->isCli()){
+            $this->initCli();
+        }
+        else{
+            //route
+            $this->config->get('route')
+            
+            $this->initWeb();
         }
     }
 
@@ -56,7 +61,7 @@ class ArkBundle
     }
 
     protected function initWeb(){
-
+        foreach($this->config->get('route.rules'))
     }
 
     protected function initCli(){
@@ -64,8 +69,29 @@ class ArkBundle
     }
 
     protected function getApp(){
+        return $this->app;
+    }
+
+    public function getDependencies()
+    {
+        return $this->config->get('bundle', $this->dependencies);
+    }
+
+
+
+    protected function registerRoute(){
+        if(null === $route_prefix = $this->config->get('route_prefi'))
+        $route = $this->config->get('route');
+        if($reoute && )
 
     }
+
+    protected function registerCommand()
+    {
+        
+    }
+
+
 
     public function getConfigFile(){
         return $this->getPath().'/config.php';
@@ -115,5 +141,17 @@ class ArkBundle
         }
 
         return $this->reflected;
+    }
+}
+
+
+class ArkBundleSimple extends ArkBundle
+{
+    public function __construct($app, $configs, $name, $path)
+    {
+        $this->name = $name;
+        $this->$path = $path;
+
+        parent::__construct($app, $configs);
     }
 }

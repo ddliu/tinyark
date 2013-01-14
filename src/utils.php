@@ -1,5 +1,13 @@
 <?php
 /**
+ * Tinyark Framework
+ *
+ * @copyright Copyright 2012-2013, Dong <ddliuhb@gmail.com>
+ * @link http://maxmars.net/projects/tinyark Tinyark project
+ * @license MIT License (http://maxmars.net/license/MIT)
+ */
+
+/**
  * Help functions and shortcut functions
  */
 
@@ -16,6 +24,11 @@ function ark($name = null){
     }
 
     return $container->get($name);
+}
+
+function ark_bundle($name)
+{
+    return Ark::app()->getBundle($name);
 }
 
 /**

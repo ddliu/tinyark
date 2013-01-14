@@ -1,7 +1,10 @@
 <?php
 /**
- * @copyright Dong <ddliuhb@gmail.com>
- * @licence http://maxmars.net/license/MIT
+ * Tinyark Framework
+ *
+ * @copyright Copyright 2012-2013, Dong <ddliuhb@gmail.com>
+ * @link http://maxmars.net/projects/tinyark Tinyark project
+ * @license MIT License (http://maxmars.net/license/MIT)
  */
 
 /**
@@ -30,6 +33,8 @@ class Ark
 
             //register ark classes
             ArkAutoload::registerFile(array(
+                'ArkEventManager' => ARK_DIR.'/event.php',
+                'ArkEvent' => ARK_DIR.'/event.php',
                 'ArkApp' => ARK_DIR.'/app.php',
                 'ArkAppWeb' => ARK_DIR.'/app.php',
                 'ArkAppCli' => ARK_DIR.'/app.php',
@@ -154,38 +159,6 @@ class ArkContainer
                 //ready event of service
                 if(isset($this->services['event'])){
                     $this->get('event')->trigger($name.'.ready');
-                }
-            }
-        }
-    }
-}
-
-class ArkEvent
-{
-    protected $eventList = array();
-
-    public function bind($event, $callback){
-        if(!isset($this->eventList[$event])){
-            $this->eventList[$event] = array($callback);
-        }
-        else{
-            $this->eventList[$event][] = $callback;
-        }
-    }
-
-    public function unbind($event){
-        if(isset($this->eventList[$event])){
-            unset($this->eventList[$event]);
-        }
-    }
-
-    public function trigger($event){
-        $args = func_get_args();
-        array_shift($args);
-        if(isset($this->eventList[$event])){
-            foreach($this->eventList[$event] as $callback){
-                if(false === call_user_func_array($callback, $args)){
-                    break;
                 }
             }
         }
