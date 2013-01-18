@@ -12,7 +12,8 @@ return array(
         ),
     ),
     'route' => array(
-    	'rewrite' => true,
+    	'mode' => 'normal',
+        'route_var' => 'r',
         'rules' => array(
             'blog/(?<blog_id>\d+)\-(?<blog_slug>\w+)\.html' => 'default/blog',
             'about\.html' => 'default/about',

@@ -24,17 +24,23 @@ abstract class ArkApp
 
     public $event;
 
-    public function __construct()
-    {
-        $this->event = new ArkEvent();
+    protected $path;
 
-        $this->event->trigger('app.before');
+    public function __construct($path = null)
+    {
+        $this->event = new ArkEventManager();
+
+        $this->event->dispatch('app.before', $this);
 
         self::$instance = $this;
         
+        if(null !== $path){
+            $this->path = $path;
+        }
+
         //path definations
-        if (!defined('APP_DIR')) {
-            define('APP_DIR', $this->getAppDir());
+        if (!defined('APP_PATH')) {
+            define('APP_PATH', $this->getAppPath());
         }
         
         $this->loadConfigs();
@@ -56,7 +62,7 @@ abstract class ArkApp
                     'class' => 'ArkView',
                     'params' => array(
                         array(
-                            'dir' => $this->getAppDir().'/view',
+                            'dir' => $this->getAppPath().'/view',
                             'extract' => true,
                             //'ext' => '.php',
                         )
@@ -82,7 +88,7 @@ abstract class ArkApp
         $this->init();
         
         //app is ready
-        $this->event->trigger('app.ready');
+        $this->event->dispatch('app.ready', $this);
     }
     
     /**
@@ -100,14 +106,18 @@ abstract class ArkApp
      * 
      * @return string
      */
-    public function getAppDir()
+    public function getAppPath()
     {
-        return $this->getPath();
+        if(null === $this->path){
+            $this->path = $this->getClassPath();
+        }
+        
+        return $this->path;
     }
 
     public function getBundleDir()
     {
-        return $this->getAppDir().'/bundle';
+        return $this->getAppPath().'/bundle';
     }
 
     protected function loadBundles()
@@ -205,7 +215,7 @@ abstract class ArkApp
     }
     
     public function getConfigFile(){
-        return $this->getAppDir().'/config.php';
+        return $this->getAppPath().'/config.php';
     }
     
     public function loadConfigs(){
@@ -215,14 +225,14 @@ abstract class ArkApp
         return $this;
     }
 
-    protected function getPath(){
-        static $dir;
-        if(null === $dir){
+    protected function getClassPath(){
+        static $path;
+        if(null === $path){
             $reflected = new ReflectionObject($this);
-            $dir = dirname($reflected->getFileName());
+            $path = dirname($reflected->getFileName());
         }
 
-        return $dir;
+        return $path;
     }
 
     public function isCli(){
@@ -252,14 +262,18 @@ class ArkAppWeb extends ArkApp
             ini_set('display_errors', 0);
             error_reporting(~E_NOTICE);
         }
+
+        if(get_magic_quotes_gpc()){
+            $_GET = array_map('stripcslashes', $_GET);
+            $_POST = array_map('stripcslashes', $_POST);
+            $_COOKIE = array_map('stripslashes', $_COOKIE);
+        }
         
         parent::__construct();
 
         $this->request = new ArkRequest();
 
-        //parse request
-        $q = ark_parse_query_path();
-        define('APP_URL',$this->request->getSchemeAndHttpHost().$q['base'].'/');
+        define('APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
     }
 
     public function getRequest()
@@ -271,7 +285,12 @@ class ArkAppWeb extends ArkApp
      * {@inheritdoc}
      */
     protected function init(){
-        $this->event->bind('app.404', 'ark_404');
+        $this->event->attach('app.404', 'ark_404', true, ArkEventManager::PRIORITY_LOWEST);
+        $this->event->attach('app.dispatch', array($this, 'dispatch'), false, ArkEventManager::PRIORITY_LOWEST);
+    }
+
+    public function forward()
+    {
         
     }
     
@@ -279,70 +298,139 @@ class ArkAppWeb extends ArkApp
      * {@inheritdoc}
      */
     public function run(){
-        $q = ark_parse_query_path();
+        $q = ark_parse_query_path($this->config->get('route.route_var', 'r'));
+        $q['https'] = $this->request->isSecure();
+        $q['method'] = $this->request->getMethod();
 
-        $this->event->trigger('app.dispatch', $q);
-        if(!$r = ark_route($q['path'], $this->config->get('route.rules'))){
-            $this->event->trigger('app.404');
+        //Request method validation
+        if(!in_array($q['method'], array('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'))){
+            $response = Ark::getHttpErrorResponse(405);
         }
         else{
-            $this->container->get('event')->trigger('ark.dispatch');
-            $this->dispatch($r);
+            $event = new ArkEvent('app.dispatch', $this, $q);
+            $this->event->dispatch($event);
+
+            $response = $event->result;
         }
-        $this->container->get('event')->trigger('ark.shutdown');
+
+        //404
+        if(null === $response){
+            $response = Ark::getHttpErrorResponse(404);
+        }
+        if ($response instanceof ArkResponse) {
+            $response->prepare()->send();
+        }
+        else{
+            echo $response;
+        }
+
+        $this->event->dispatch('app.shutdown', $this);
+    }
+
+    public function findAction($action)
+    {
+        if(!preg_match('#^([a-zA-Z0-9_-]+/)*([a-zA-Z][a-zA-Z0-9_]*)$#', $action['_controller'], $match) || !preg_match('#^[a-zA-Z][a-zA-Z0-9_]*$#', $action['_action'])){
+            return false;
+        }
+
+        $class = $match[2].'Controller';
+        if(!class_exists($class)){
+            if(!$bundle = $this->getBundle($action['_bundle'])){
+                return false;
+            }
+            $controller_file = $bundle->getPath().'/controller/'.$match[0].'Controller.php';
+            if(!file_exists($controller_file)){
+                return false;
+            }
+
+            require($controller_file);
+        }
+
+        $controller = new $class();
+        if(!method_exists($controller, $action.'Action')){
+            return false;
+        }
+
+        return array($controller, $action.'Action');
     }
     
     /**
      * Dispatch
      * @param array $r
      */
-    protected function dispatch($r){//$controller, $action, $params){
-        //extract params for named pattern
-        if(isset($r['params'])){
-            foreach($r['params'] as $k => $v){
-                $this->request->setAttribute($k, $v);
-            }
-        }
-
-        
-
-        $handler = null;
-        $handler_params = null;
-        //callback handler
-        if(isset($r['handler'])){
-            $handler = $r['handler'];
-            $handler_params = ark_handler_params($handler, $r['params']);
-        }
-        else{
-            if($r['controller'] === ''){
-                $r['controller'] = 'default';
-            }
-            if($r['action'] === ''){
-                $r['action'] = 'index';
-            }
-            $controllerFile = $this->getAppDir().'/controller/'.$r['controller'].'Controller.php';
-            if(file_exists($controllerFile)){
-                require_once($controllerFile);
-                $classname = basename($r['controller']).'Controller';
-                $methodName = $r['action'].'Action';
-                $o = new $classname;
-                if(method_exists($o, $methodName)){
-                    $handler = array($o, $methodName);
-                    $handler_params = ark_handler_params($classname.'::'.$methodName, $r['params']);
+    protected function dispatch($event){
+        $router = new ArkRouter($this->config->get('route.rules'));
+        if(false !== $rule = $router->match($event['data'])){
+            $action = null;
+            if(!isset($rule['handler'])){
+                $action = array(
+                );
+                if(isset($rule['attributes']['_bundle'])){
+                    $action['_bundle'] = $rule['attributes']['_bundle'];
+                }
+                if(isset($rule['attributes']['_controller'])){
+                    $action['_controller'] = $rule['attributes']['_controller'];
+                }
+                if(isset($rule['attributes']['_action'])){
+                    $action['_action'] = $rule['attributes']['_action'];
                 }
             }
-        }
-        if(null !== $handler){
-            $response = call_user_func_array($handler, $handler_params);
-            if ($response instanceof ArkResponse) {
-                $response->prepare()->send();
+            else{
+                if(is_string($rule['handler']) && false !== strpos($rule['handler'], '/')){
+                    $action = array();
+                    $handler = $rule['handler'];
+                    if($rule['handler'][0] === ':'){
+                        $parts = explode('/', $rule['handler'], 2);
+                        $action['_bundle'] = substr($parts[0], 1);
+                        $handler = $parts[1];
+                    }
+                    else{
+                        $handler = ltrim($handler, '/');
+                    }
+
+                    if($handler !== ''){
+                        $last_slash = strrpos($handler, '/');
+                        if(false === $last_slash){
+                            $action['_action'] = $handler;
+                        }
+                        //ends with slash
+                        elseif($last_slash != strlen($handler) - 1){
+                            $action['_controller'] = substr($handler, 0, -1);
+                        }
+                        else{
+                            $action['_controller'] = substr($handler, 0, $last_slash);
+                            $action['_action'] = substr($handler, $last_slash + 1);
+                        }
+                    }
+                }
             }
-            elseif(null !== $response){
-                echo $response;
+            if(!isset($action['_bundle'])){
+                $action['_bundle'] = 'app';
             }
+            if(!isset($action['_controller'])){
+                $action['_controller'] = 'default';
+            }
+            if(!isset($action['_action'])){
+                $action['_action'] = 'index';
+            }
+
+            if(isset($rule['attributes'])){
+                foreach($rule['attributes'] as $k => $v){
+                    $this->request->setAttribute($k, $v);
+                }
+            }
+
+            if($action){
+                if(false === $handler = $this->findAction($action)){
+                    return false;
+                }
+            }
+
+            $handler_params = ark_handler_params($handler, $rule['attributes']);
+            return call_user_func_array($handler, $handler_params);
         }
         else{
-            $this->container->get('event')->trigger('ark.404');
+            return false;
         }
     }
 }

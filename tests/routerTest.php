@@ -17,12 +17,12 @@ class RouterTest extends PHPUnit_Framework_TestCase{
             array(
                 'name' => 'blog_home',
                 'path' => 'blog/',
-                'target' => 'target_blog_home'
+                'handler' => 'handler_blog_home'
             ),
             array(
                 'name' => 'blog_post',
                 'path' => 'blog/<id:\d+>',
-                'target' => 'target_blog_post',
+                'handler' => 'handler_blog_post',
             ),
             array(
                 'name' => 'blog_archive',
@@ -30,12 +30,12 @@ class RouterTest extends PHPUnit_Framework_TestCase{
                 'defaults' => array(
                     'page' => 1
                 ),
-                'target' => 'target_blog_archive',
+                'handler' => 'handler_blog_archive',
             ),
             array(
                 'name' => 'blog_tag',
                 'path' => 'blog/tag/<slug>',
-                'target' => 'target_blog_tag',
+                'handler' => 'handler_blog_tag',
             ),
             array(
                 'name' => 'cli',

@@ -11,6 +11,16 @@ class ArkRequest
 {
     protected $attributes;
 
+    public function __construct()
+    {
+        
+    }
+
+    public function getMethod()
+    {
+        return $_SERVER['REQUEST_METHOD'];
+    }
+
     public function getAttribute($key, $default = null)
     {
         return isset($this->attributes[$key])?$this->attributes[$key]:$default;
@@ -120,6 +130,23 @@ class ArkRequest
         return $this->getScheme().'://'.$this->getHttpHost();
     }
 
+    /**
+     * Get url base path of current request
+     * @return string
+     */
+    public function getBasePath()
+    {
+        $script_name = $_SERVER['SCRIPT_NAME'];
+        $script_name_length = strlen($script_name);
+
+        $request_uri = $_SERVER['REQUEST_URI'];
+
+        $slash_pos = strrpos($script_name, '/');
+        $base = substr($script_name, 0, $slash_pos);
+        
+        return $base;
+    }
+
     public function isXmlHttpRequest()
     {
         return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
@@ -143,80 +170,6 @@ class ArkResponse
      */
     protected $charset;
 
-    /**
-     * Status codes translation table.
-     *
-     * The list of codes is complete according to the
-     * {@link http://www.iana.org/assignments/http-status-codes/ Hypertext Transfer Protocol (HTTP) Status Code Registry}
-     * (last updated 2012-02-13).
-     *
-     * Unless otherwise noted, the status code is defined in RFC2616.
-     *
-     * @var array
-     */
-    public static $statusTexts = array(
-        100 => 'Continue',
-        101 => 'Switching Protocols',
-        102 => 'Processing',            // RFC2518
-        200 => 'OK',
-        201 => 'Created',
-        202 => 'Accepted',
-        203 => 'Non-Authoritative Information',
-        204 => 'No Content',
-        205 => 'Reset Content',
-        206 => 'Partial Content',
-        207 => 'Multi-Status',          // RFC4918
-        208 => 'Already Reported',      // RFC5842
-        226 => 'IM Used',               // RFC3229
-        300 => 'Multiple Choices',
-        301 => 'Moved Permanently',
-        302 => 'Found',
-        303 => 'See Other',
-        304 => 'Not Modified',
-        305 => 'Use Proxy',
-        306 => 'Reserved',
-        307 => 'Temporary Redirect',
-        308 => 'Permanent Redirect',    // RFC-reschke-http-status-308-07
-        400 => 'Bad Request',
-        401 => 'Unauthorized',
-        402 => 'Payment Required',
-        403 => 'Forbidden',
-        404 => 'Not Found',
-        405 => 'Method Not Allowed',
-        406 => 'Not Acceptable',
-        407 => 'Proxy Authentication Required',
-        408 => 'Request Timeout',
-        409 => 'Conflict',
-        410 => 'Gone',
-        411 => 'Length Required',
-        412 => 'Precondition Failed',
-        413 => 'Request Entity Too Large',
-        414 => 'Request-URI Too Long',
-        415 => 'Unsupported Media Type',
-        416 => 'Requested Range Not Satisfiable',
-        417 => 'Expectation Failed',
-        418 => 'I\'m a teapot',                                               // RFC2324
-        422 => 'Unprocessable Entity',                                        // RFC4918
-        423 => 'Locked',                                                      // RFC4918
-        424 => 'Failed Dependency',                                           // RFC4918
-        425 => 'Reserved for WebDAV advanced collections expired proposal',   // RFC2817
-        426 => 'Upgrade Required',                                            // RFC2817
-        428 => 'Precondition Required',                                       // RFC6585
-        429 => 'Too Many Requests',                                           // RFC6585
-        431 => 'Request Header Fields Too Large',                             // RFC6585
-        500 => 'Internal Server Error',
-        501 => 'Not Implemented',
-        502 => 'Bad Gateway',
-        503 => 'Service Unavailable',
-        504 => 'Gateway Timeout',
-        505 => 'HTTP Version Not Supported',
-        506 => 'Variant Also Negotiates (Experimental)',                      // RFC2295
-        507 => 'Insufficient Storage',                                        // RFC4918
-        508 => 'Loop Detected',                                               // RFC5842
-        510 => 'Not Extended',                                                // RFC2774
-        511 => 'Network Authentication Required',                             // RFC6585
-    );
-
     public function __construct($content = '', $status = 200, $headers = array()) {
         $this->headers = $headers;
         $this->content = $content;
@@ -237,11 +190,105 @@ class ArkResponse
         $this->content = $content;
     }
 
+    static public function getStatusTextByCode($code){
+        /**
+         * Status codes translation table.
+         *
+         * The list of codes is complete according to the
+         * {@link http://www.iana.org/assignments/http-status-codes/ Hypertext Transfer Protocol (HTTP) Status Code Registry}
+         * (last updated 2012-02-13).
+         *
+         * Unless otherwise noted, the status code is defined in RFC2616.
+         */
+        static $texts = array(
+            100 => 'Continue',
+            101 => 'Switching Protocols',
+            102 => 'Processing',            // RFC2518
+            200 => 'OK',
+            201 => 'Created',
+            202 => 'Accepted',
+            203 => 'Non-Authoritative Information',
+            204 => 'No Content',
+            205 => 'Reset Content',
+            206 => 'Partial Content',
+            207 => 'Multi-Status',          // RFC4918
+            208 => 'Already Reported',      // RFC5842
+            226 => 'IM Used',               // RFC3229
+            300 => 'Multiple Choices',
+            301 => 'Moved Permanently',
+            302 => 'Found',
+            303 => 'See Other',
+            304 => 'Not Modified',
+            305 => 'Use Proxy',
+            306 => 'Reserved',
+            307 => 'Temporary Redirect',
+            308 => 'Permanent Redirect',    // RFC-reschke-http-status-308-07
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            402 => 'Payment Required',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            405 => 'Method Not Allowed',
+            406 => 'Not Acceptable',
+            407 => 'Proxy Authentication Required',
+            408 => 'Request Timeout',
+            409 => 'Conflict',
+            410 => 'Gone',
+            411 => 'Length Required',
+            412 => 'Precondition Failed',
+            413 => 'Request Entity Too Large',
+            414 => 'Request-URI Too Long',
+            415 => 'Unsupported Media Type',
+            416 => 'Requested Range Not Satisfiable',
+            417 => 'Expectation Failed',
+            418 => 'I\'m a teapot',                                               // RFC2324
+            422 => 'Unprocessable Entity',                                        // RFC4918
+            423 => 'Locked',                                                      // RFC4918
+            424 => 'Failed Dependency',                                           // RFC4918
+            425 => 'Reserved for WebDAV advanced collections expired proposal',   // RFC2817
+            426 => 'Upgrade Required',                                            // RFC2817
+            428 => 'Precondition Required',                                       // RFC6585
+            429 => 'Too Many Requests',                                           // RFC6585
+            431 => 'Request Header Fields Too Large',                             // RFC6585
+            500 => 'Internal Server Error',
+            501 => 'Not Implemented',
+            502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+            504 => 'Gateway Timeout',
+            505 => 'HTTP Version Not Supported',
+            506 => 'Variant Also Negotiates (Experimental)',                      // RFC2295
+            507 => 'Insufficient Storage',                                        // RFC4918
+            508 => 'Loop Detected',                                               // RFC5842
+            510 => 'Not Extended',                                                // RFC2774
+            511 => 'Network Authentication Required',                             // RFC6585
+        );
+        $code = (int) $code;
+        return isset($texts[$code])?$texts[$code]:'';
+    }
+
+    static public function getStatusMessageByCode($code){
+        static $messages = array(
+            400 => 'Your browser (or proxy) sent a request that this server could not understand.',
+            401 => 'This server could not verify that you are authorized to access the URL. You either supplied the wrong credentials (e.g., bad password), or your browser doesn\'t understand how to supply the credentials required.',
+            403 => 'You don\'t have permission to access the requested object. It is either read-protected or not readable by the server.',
+            404 => 'The requested URL was not found on this server.',
+            405 => 'The requested method is not allowed.',
+            408 => 'The server closed the network connection because the browser didn\'t finish the request within the specified time.',
+            413 => 'The request method does not allow the data transmitted, or the data volume exceeds the capacity limit.',
+            415 => 'The server does not support the media type transmitted in the request.',
+            500 => 'The server encountered an internal error and was unable to complete your request.',
+            501 => 'The server does not support the action requested by the browser.',
+            503 => 'The server is temporarily unable to service your request due to maintenance downtime or capacity problems. Please try again later.',
+        );
+        $code = (int) $code;
+        return isset($messages[$code])?$messages[$code]:'';
+    }
+
     public function setStatusCode($code, $text = null)
     {
         $this->statusCode = $code = (int) $code;
         if(null === $text){
-            $text = self::$statusTexts[$code];
+            $text = self::getStatusTextByCode($code);
         }
 
         $this->statusText = $text;

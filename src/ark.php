@@ -15,7 +15,7 @@ define('ARK_MICROTIME', microtime(true));
 define('ARK_TIMESTAMP', round(ARK_MICROTIME));
 
 //Path of the framework
-define( 'ARK_DIR' , dirname(__FILE__));
+define('ARK_DIR' , dirname(__FILE__));
 
 require_once(ARK_DIR.'/utils.php');
 
@@ -77,14 +77,27 @@ class Ark
      * @param  boolean $return
      * @return mixed
      */
-    public static function renderInternal($template, $variables = null, $return = false){
+    static public function renderInternal($template, $variables = null, $return = false){
         $view = new ArkView();
 
         return $view->render(ARK_DIR.'/internal/view/'.$template, $variables, $return);
     }
 
-    public static function app(){
+    static public function getHttpErrorResponse($http_code){
+        $view = new ArkView();
+        return new ArkResponse($view->render(ARK_DIR.'/internal/view/http_error.html.php'), array(
+            'code' => $http_code,
+            'title' => ArkResponse::getStatusTextByCode($http_code),
+            'message' => ArkResponse::getStatusMessageByCode($http_code)
+        ), $http_code);
+    }
+
+    static public function app(){
         return ArkApp::$instance;
+    }
+
+    static public function createWebApp($path){
+        return new ArkAppWeb($path);
     }
 }
 

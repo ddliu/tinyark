@@ -35,49 +35,53 @@ function ark_bundle($name)
  * 404 page
  */
 function ark_404(){
-    header("HTTP/1.0 404 Not Found");
-    Ark::renderInternal('404.html.php');    
-    exit;
+    Ark::getHttpErrorResponse(404)->prepare()->send();
 }
 
-function ark_parse_query_path(){
-    static $q;
-    if(null === $q){
-        $q = array();
-        $script_name = $_SERVER['SCRIPT_NAME'];
-        $script_name_length = strlen($script_name);
+/**
+ * Parse the query path
+ * url_mod 0: pathinfo, 1: rewrite, 2: normal(?r=)
+ * @param  string $key
+ * @return array
+ *         - mode: 0, 1, 2; unknown if not set
+ *         - path: 
+ *         - basename
+ */
+function ark_parse_query_path($key = 'r'){
+    $q = array();
+    $script_name = $_SERVER['SCRIPT_NAME'];
+    $request_uri = $_SERVER['REQUEST_URI'];
+    $basename = basename($script_name);
 
-        $request_uri = $_SERVER['REQUEST_URI'];
+    $basename_length = strlen($basename);
 
-        $slash_pos = strrpos($script_name, '/');
-        $base = substr($script_name, 0, $slash_pos);
-        $q['base'] = $base;
+    $slash_pos = strrpos($script_name, '/');
 
-        //is script name in uri?
-        if(substr($request_uri, 0, $script_name_length) == $script_name){
-            if(
-                !isset($request_uri[$script_name_length]) 
-                || 
-                in_array($request_uri[$script_name_length], array('/', '?'))
-            ){
-                $request_basename = basename($script_name);
-            }
-        }
-        else{
-            $request_basename = null;
-        }
+    //remove base path
+    $request_uri = substr($request_uri, $slash_pos + 1);
 
-        $urlinfo = parse_url($request_uri);
-        
-        if(null === $request_basename && !isset($_GET['r'])){
-            $info = substr($urlinfo['path'], $slash_pos + 1);
-        }
-        else{
-            $info = isset($_GET['r'])?$_GET['r']:'';
-        }
-
-        $q['path'] = $info;
+    //pathinfo
+    if(substr($request_uri, 0, $basename_length + 1) === $basename.'/' ){
+        $q['mode'] = 0;
+        $q['path'] = substr($request_uri, $basename_length + 1);
     }
+    //rewrite
+    elseif($request_uri !== '' && (substr($request_uri, 0, $basename_length) !== $basename or isset($request_uri[$basename_length]))){
+        $q['mode'] = 1;
+        $q['path'] = $request_uri;
+    }
+    //normal
+    elseif(null !== $key && isset($_GET[$key])){
+        $q['mode'] = 2;
+        $q['path'] = $_GET[$key];
+    }
+    //unknown
+    else{
+        $q['path'] = '';
+    }
+
+    $q['basename'] = $basename;
+
     return $q;
 }
 
@@ -139,7 +143,11 @@ function ark_match($pattern, $callback){
 function ark_handler_params($handler, $params)
 {
     $result = array();
-    if(strpos($handler, '::')){
+    if(is_array($handler)){
+        $clazz = get_class($handler[0]);
+        $reflect = new ReflectionMethod($clazz, $handler[1]);
+    }
+    elseif(is_string($handler) && strpos($handler, '::')){
         list($clazz, $func_name) = explode('::', $handler, 2);
         $reflect = new ReflectionMethod($clazz, $func_name);
     }

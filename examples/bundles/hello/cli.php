@@ -1,0 +1,2 @@
+<?php
+$bundle->addCommand();

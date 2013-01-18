@@ -22,7 +22,7 @@
  *      - method: 'GET|POST',
  *      - https: true,
  *      - name: 
- *      - target: 
+ *      - handler: 
  *
  *  request:
  *      - path

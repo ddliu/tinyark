@@ -7,6 +7,9 @@
  * @license MIT License (http://maxmars.net/license/MIT)
  */
 
+/**
+ * Event Manager
+ */
 class ArkEventManager
 {
     protected $eventList = array();
@@ -19,8 +22,26 @@ class ArkEventManager
 
     public function attach($name, $callback, $passParam = false, $priority = null)
     {
+        if(is_string($priority)){
+            $priority = strtolower($priority);
+        }
         if(null === $priority){
             $priority = self::PRIORITY_DEFAULT;
+        }
+        elseif ($priority === 'highest') {
+            $priority = self::PRIORITY_HIGHEST;
+        }
+        elseif ($priority === 'high') {
+            $priority = self::PRIORITY_HIGH;
+        }
+        elseif ($priority === 'default') {
+            $priority = self::PRIORITY_DEFAULT;
+        }
+        elseif ($priority === 'low') {
+            $priority = self::PRIORITY_LOW;
+        }
+        elseif ($priority === 'lowest') {
+            $priority = self::PRIORITY_LOWEST;
         }
 
         $this->eventList[$name][$priority][] = array(
@@ -66,11 +87,20 @@ class ArkEventManager
         return $this;
     }
 
+    /**
+     * Dispatch event.
+     * Event chain stops when event handler returns false or stops event propagation.
+     * 
+     * @param  mixed $event
+     * @param  mixed $source
+     * @param  array  $event_data
+     * @return boolean Is event stopped
+     */
     public function dispatch($event, $source = null, $event_data = array())
     {
         $event_name = is_string($event)?$event:$event->getName();
         if(!isset($this->eventList[$event_name])){
-            return;
+            return true;
         }
 
         if(is_string($event)){
@@ -92,13 +122,15 @@ class ArkEventManager
                 }
                 if(false === $result){
                     $event->stopPropagation();
-                    break;
+                    return false;
                 }
                 if($event->isStopped()){
-                    break;
+                    return false;;
                 }
             }
         }
+
+        return true;
     }
 }
 
