@@ -45,8 +45,10 @@ class ArkRouter
      */
     public function __construct($rules = array())
     {
-        foreach($rules as $rule){
-            $this->addRule($rule);
+        if(null !== $rules){
+            foreach($rules as $rule){
+                $this->addRule($rule);
+            }
         }
     }
 

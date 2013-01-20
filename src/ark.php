@@ -85,11 +85,11 @@ class Ark
 
     static public function getHttpErrorResponse($http_code){
         $view = new ArkView();
-        return new ArkResponse($view->render(ARK_DIR.'/internal/view/http_error.html.php'), array(
+        return new ArkResponse($view->render(ARK_DIR.'/internal/view/http_error.html.php', array(
             'code' => $http_code,
             'title' => ArkResponse::getStatusTextByCode($http_code),
             'message' => ArkResponse::getStatusMessageByCode($http_code)
-        ), $http_code);
+        )), $http_code);
     }
 
     static public function app(){

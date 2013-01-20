@@ -252,8 +252,9 @@ abstract class ArkApp
 class ArkAppWeb extends ArkApp
 {
     protected $request;
+    public $router;
 
-    public function __construct(){
+    public function __construct($path = null){
         if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
             ini_set('display_errors', 1);
             error_reporting(E_ALL^E_NOTICE);
@@ -269,11 +270,16 @@ class ArkAppWeb extends ArkApp
             $_COOKIE = array_map('stripslashes', $_COOKIE);
         }
         
-        parent::__construct();
+        parent::__construct($path);
 
         $this->request = new ArkRequest();
+        $this->router = new ArkRouter();
 
         define('APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
+    }
+
+    protected function addRouterRule($rule)
+    {
     }
 
     public function getRequest()
@@ -314,7 +320,7 @@ class ArkAppWeb extends ArkApp
         }
 
         //404
-        if(null === $response){
+        if(null === $response || false === $response){
             $response = Ark::getHttpErrorResponse(404);
         }
         if ($response instanceof ArkResponse) {
@@ -358,9 +364,9 @@ class ArkAppWeb extends ArkApp
      * Dispatch
      * @param array $r
      */
-    protected function dispatch($event){
+    public function dispatch($event){
         $router = new ArkRouter($this->config->get('route.rules'));
-        if(false !== $rule = $router->match($event['data'])){
+        if(false !== $rule = $router->match($event->data)){
             $action = null;
             if(!isset($rule['handler'])){
                 $action = array(
