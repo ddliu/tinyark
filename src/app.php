@@ -278,8 +278,26 @@ class ArkAppWeb extends ArkApp
         define('APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
     }
 
-    protected function addRouterRule($rule)
+    /**
+     * Add rules
+     * @param array $rules 
+     *      array(
+     *          pattern => handler
+     *          name => rule
+     *          array(
+     *              k => v
+     *              k => v
+     *          )
+     *      )
+     */
+    protected function addRouterRules($rules)
     {
+        foreach ($rules as $key => $value) {
+            $rule = array();
+            if(is_int($key)){
+
+            }
+        }
     }
 
     public function getRequest()
