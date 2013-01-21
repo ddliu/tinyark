@@ -20,15 +20,23 @@ class ArkBundle
     protected $name;
     public $config;
 
-    public function __construct($app, $configs = null)
+    public function __construct($app, $name = null, $path = null, $configs = null)
     {
-        $app->
         $this->app = $app;
 
+        if(null !== $name){
+            $this->name = $name;
+        }
+        if(null !== $path){
+            $this->path = $path;
+        }
         $this->loadConfig();
         if(null !== $configs){
             $this->config->merge($configs);
         }
+
+        //autoload
+        $this->app->addAutoloadFromConfig($this->config->get('autoload', array()));
 
         //dependencies
         if($dependencies = $this->getDependencies()){
@@ -36,8 +44,6 @@ class ArkBundle
                 $this->app->addBundle($v);
             }
         }
-
-
 
         $this->init();
         if($this->app->isCli()){
@@ -61,7 +67,12 @@ class ArkBundle
     }
 
     protected function initWeb(){
-        foreach($this->config->get('route.rules'))
+        $this->app->addRouterRules(
+            $this->config->get('route.rules', array()), 
+            $this->config->get('route.prefix'),
+            $this->config->get('route.requirements'),
+            $this->config->get('route.defaults'),
+        );
     }
 
     protected function initCli(){

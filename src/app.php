@@ -72,19 +72,10 @@ abstract class ArkApp
         }
 
         //autoload custom classes
-        if ($this->config->has('autoload.dir')) {
-            foreach ($this->config->get('autoload.dir') as $dir) {
-                ArkAutoload::registerDir($dir);
-            }
-        }
-
-        if ($this->config->has('autoload.file')) {
-            ArkAutoload::registerFile($this->config->get('autoload.file'));
-        }
+        $this->addAutoloadFromConfig($this->config->get('autoload', array()));
 
         //bundles
         $this->loadBundles();
-        
         $this->init();
         
         //app is ready
@@ -95,6 +86,19 @@ abstract class ArkApp
      * Init app
      */
     abstract protected function init();
+
+    public function addAutoloadFromConfig($configs)
+    {
+        if(isset($configs['dir'])){
+            foreach ($configs['dir'] as $dir) {
+                ArkAutoload::registerDir($dir);
+            }
+        }
+
+        if(isset($configs['file'])){
+            ArkAutoload::registerFile($configs['file']);
+        }
+    }
 
     public function getContainer()
     {
@@ -120,6 +124,11 @@ abstract class ArkApp
         return $this->getAppPath().'/bundle';
     }
 
+
+    /**
+     * Load all bundles
+     * @todo Manage dependencies
+     */
     protected function loadBundles()
     {
         foreach($this->config->get('bundle.bundles', array()) as $v){
@@ -154,7 +163,7 @@ abstract class ArkApp
                 isset($v['path'])?$v['path']:null,
                 isset($v['configs'])?$v['configs']:null
             );
-            if(isset($v['start']) && $v['start']){
+            if(!isset($v['start']) || $v['start']){
                 $this->loadBundle($name);
             }
         }else{
@@ -202,6 +211,7 @@ abstract class ArkApp
             }
 
             $info = $this->registeredBundleInfo[$name];
+
             if(!file_exists($info['path'].'/bundle.php')){
                 return false;
             }
@@ -274,7 +284,12 @@ class ArkAppWeb extends ArkApp
 
         $this->request = new ArkRequest();
         $this->router = new ArkRouter();
-
+        $this->addRouterRules(
+            $this->config->get('route.rules', array()), 
+            null, 
+            $this->config->get('route.requirements'),
+            $this->config->get('route.defaults')
+        );
         define('APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
     }
 
@@ -283,21 +298,64 @@ class ArkAppWeb extends ArkApp
      * @param array $rules 
      *      array(
      *          pattern => handler
-     *          name => rule
+     *          pattern => rule
      *          array(
      *              k => v
      *              k => v
      *          )
      *      )
+     * @param string $prefix
+     * @param array $requirements
+     * @param array $defaults
+     * @return ArkApp
      */
-    protected function addRouterRules($rules)
+    public function addRouterRules($rules, $prefix = null, $requirements = null, $defaults = null)
     {
-        foreach ($rules as $key => $value) {
-            $rule = array();
-            if(is_int($key)){
-
-            }
+        if(null !== $prefix){
+            $prefix = preg_quote($prefix, '#');
         }
+        foreach ($rules as $key => $value) {
+            if(is_array($value)){
+                $rule = $value;
+                if(is_string($key)){
+                    $rule['path'] = $key;
+                }
+            }
+            else{
+                $rule = array(
+                    'path' => $key,
+                    'handler' => $value,
+                );
+            }
+
+            //prefix
+            if(null !== $prefix){
+                $rule['path'] = $prefix.$rule['path'];
+            }
+            //requirements
+            if(null !== $requirements){
+                if(!isset($rule['requirements'])){
+                    $rule['requirements'] = $requirements;
+                }
+                else{
+                    $rule['requirements'] += $requirements;
+                }
+            }
+
+            //defaults
+            if(null !== $defaults){
+                if(!isset($rule['defaults'])){
+                    $rule['defaults'] = $defaults;
+                }
+                else{
+                    $rule['defaults'] += $defaults;
+                }
+            }
+
+            $this->router->addRule($rule);
+        }
+
+        return $this;
     }
 
     public function getRequest()
@@ -359,10 +417,16 @@ class ArkAppWeb extends ArkApp
 
         $class = $match[2].'Controller';
         if(!class_exists($class)){
-            if(!$bundle = $this->getBundle($action['_bundle'])){
+            if(!isset($action['_bundle'])){
+                $path = $this->getAppPath();
+            }
+            elseif(!$bundle = $this->getBundle($action['_bundle'])){
                 return false;
             }
-            $controller_file = $bundle->getPath().'/controller/'.$match[0].'Controller.php';
+            else{
+                $path = $bundle->getPath();
+            }
+            $controller_file = $path.'/controller/'.$match[0].'Controller.php';
             if(!file_exists($controller_file)){
                 return false;
             }
@@ -371,11 +435,11 @@ class ArkAppWeb extends ArkApp
         }
 
         $controller = new $class();
-        if(!method_exists($controller, $action.'Action')){
+        if(!method_exists($controller, $action['_action'].'Action')){
             return false;
         }
 
-        return array($controller, $action.'Action');
+        return array($controller, $action['_action'].'Action');
     }
     
     /**
@@ -383,8 +447,7 @@ class ArkAppWeb extends ArkApp
      * @param array $r
      */
     public function dispatch($event){
-        $router = new ArkRouter($this->config->get('route.rules'));
-        if(false !== $rule = $router->match($event->data)){
+        if(false !== $rule = $this->router->match($event->data)){
             $action = null;
             if(!isset($rule['handler'])){
                 $action = array(
@@ -418,7 +481,7 @@ class ArkAppWeb extends ArkApp
                             $action['_action'] = $handler;
                         }
                         //ends with slash
-                        elseif($last_slash != strlen($handler) - 1){
+                        elseif($last_slash === strlen($handler) - 1){
                             $action['_controller'] = substr($handler, 0, -1);
                         }
                         else{
@@ -429,7 +492,7 @@ class ArkAppWeb extends ArkApp
                 }
             }
             if(!isset($action['_bundle'])){
-                $action['_bundle'] = 'app';
+                //$action['_bundle'] = 'app';
             }
             if(!isset($action['_controller'])){
                 $action['_controller'] = 'default';
@@ -456,6 +519,12 @@ class ArkAppWeb extends ArkApp
         else{
             return false;
         }
+    }
+
+
+    public function generateUrl($name, $attributes = null, $absolute = false, $https = null)
+    {
+        $name 
     }
 }
 

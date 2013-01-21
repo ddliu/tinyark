@@ -160,7 +160,7 @@ function ark_handler_params($handler, $params)
         if(isset($params[$name])){
             $value = $params[$name];
         }
-        elseif($param->isDefaltValueAvailable()){
+        elseif($param->isDefaultValueAvailable()){
             $value = $param->getDefaultValue();
         }
         $result[$name] = $value;
@@ -176,7 +176,7 @@ function ark_handler_params($handler, $params)
  * @return mixed
  */
 function ark_config($key, $default = null){
-    return isset(Ark::app()->configs[$key])?Ark::app()->configs[$key]:$default;
+    return Ark::app()->config->get($key, $default);
 }
 
 /**
@@ -185,7 +185,7 @@ function ark_config($key, $default = null){
  * @param mixed $params
  * @return string
  */
-function ark_url($path = '', $params = null){
+function ark_url($path = '', $params = null, $absolute = false, $https = null){
     $url = APP_URL;
     $rewrite = ark_config('rewrite', true);
     if($path !== ''){
@@ -211,7 +211,12 @@ function ark_url($path = '', $params = null){
     return $url;
 }
 
-function ark_assets($path){
+function ark_url_named($name, $params = null, $absolute = false, $https = null)
+{
+    return Ark::app()->generateUrl($name, $params, $absolute, $https);
+}
+
+function ark_assets($path, $absolute = false, $https = null){
     return APP_URL.$path;
 }
 

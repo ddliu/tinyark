@@ -15,11 +15,18 @@ return array(
     	'mode' => 'normal',
         'route_var' => 'r',
         'rules' => array(
-            'blog/(?<blog_id>\d+)\-(?<blog_slug>\w+)\.html' => 'default/blog',
+            array(
+                'name' => 'home',
+                'path' => '',
+                'handler' => 'default/index',
+            ),
+            array(
+                'name' => 'blog_slug',
+                'path' => 'blog/<blog_id:\d+>-<blog_slug:\w+>\.html',
+                'handler' => 'default/blog',
+            ),
             'about\.html' => 'default/about',
             'contact\.html' => 'default/contact',
-            //RESTful URL
-            '((\w+/)*\w+)\.(?<format>json|xml)' => '\\1',
         )
     ),
     'autoload' => array(

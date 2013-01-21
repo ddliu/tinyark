@@ -151,6 +151,7 @@ class ArkEvent
     {
         $this->name = $name;
         $this->source = $source;
+        $this->data = $data;
     }
 
     public function stopPropagation()

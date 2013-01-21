@@ -76,7 +76,7 @@ class ArkRouter
         foreach($this->rules as $k => $rule){
             if(false !== $attributes = $this->matchRule($request, $rule, $k)){
                 if(is_array($attributes)){
-                    $rule['attrubutes'] = $attributes;
+                    $rule['attributes'] = $attributes;
                 }
 
                 return $rule;
@@ -171,7 +171,7 @@ class ArkRouter
      * @param  array  $attributes
      * @return string|false
      */
-    public function getPath($name, $attributes = array())
+    public function generate($name, $attributes = array())
     {
         if(!isset($this->names[$name])){
             return false;
@@ -184,20 +184,21 @@ class ArkRouter
             }
             $this->generatePaths[$index] = $this->pathForGenerate($this->rules[$index]['path']);
         }
-        
-        if(isset($this->rules[$index]['defaults'])){
-            foreach($this->rules[$index]['defaults'] as $k => $v){
-                if(!isset($attributes[$k])){
-                    $attributes[$k] = $v;
+        $replace_attributes = $attributes + (isset($this->rules[$index]['defaults'])?$this->rules[$index]['defaults']:array());
+        $reserved_attributes = array();
+
+        $replace = array();
+        foreach($replace_attributes as $key => $value){
+            if(false !== strpos($this->generatePaths[$index], '<'.$key.'>')){
+                $replace['<'.$key.'>'] = $value;
+            }
+            else{
+                if(isset($attributes[$key])){
+                    $reserved_attributes[$key] = $value;
                 }
             }
         }
 
-        $replace = array();
-        foreach ($attributes as $key => $value) {
-            $replace['<'.$key.'>'] = $value;
-        }
-
-        return strtr($this->generatePaths[$index], $replace);
+        return strtr($this->generatePaths[$index], $replace).($reserved_attributes?'?'.http_build_query($reserved_attributes):'');
     }
 }

@@ -66,7 +66,7 @@ class RouterTest extends PHPUnit_Framework_TestCase{
         ));
 
         $this->assertEquals($rule['name'], 'blog_post');
-        $this->assertEquals($rule['attrubutes']['id'], '123');
+        $this->assertEquals($rule['attributes']['id'], '123');
 
         $rule = $this->router->match(array(
             'path' => 'blog/55abc',
@@ -76,7 +76,7 @@ class RouterTest extends PHPUnit_Framework_TestCase{
         $rule = $this->router->match(array(
             'path' => 'blog/tag/php',
         ));
-        $this->assertEquals($rule['attrubutes']['slug'], 'php');
+        $this->assertEquals($rule['attributes']['slug'], 'php');
 
         $rule = $this->router->match(array(
             'path' => 'blog/tag/php.html',
@@ -86,27 +86,32 @@ class RouterTest extends PHPUnit_Framework_TestCase{
         $rule = $this->router->match(array(
             'path' => 'cache:clear:blog'
         ));
-        $this->assertEquals($rule['attrubutes']['bundle'], 'blog');
+        $this->assertEquals($rule['attributes']['bundle'], 'blog');
     }
 
     public function testGenerate()
     {
-        $this->assertFalse($this->router->getPath('nonexists'));
+        $this->assertFalse($this->router->generate('nonexists'));
 
-        $this->assertEquals($this->router->getPath('blog_home'), 'blog/');
+        $this->assertEquals($this->router->generate('blog_home'), 'blog/');
 
-        $this->assertEquals($this->router->getPath('blog_post', array(
+        $this->assertEquals($this->router->generate('blog_post', array(
             'id' => 5
         )), 'blog/5');
 
-        $this->assertEquals($this->router->getPath('blog_archive', array(
+        $this->assertEquals($this->router->generate('blog_archive', array(
             'page' => 123,
         )), 'blog/archive/123');
 
-        $this->assertEquals($this->router->getPath('blog_archive'), 'blog/archive/1');
+        $this->assertEquals($this->router->generate('blog_archive'), 'blog/archive/1');
 
-        $this->assertEquals($this->router->getPath('blog_tag', array(
+        $this->assertEquals($this->router->generate('blog_tag', array(
             'slug' => 'php'
         )), 'blog/tag/php');
+
+        $this->assertEquals($this->router->generate('blog_tag', array(
+            'slug' => 'php',
+            'page' => 3
+        )), 'blog/tag/php?page=3');
     }
 }

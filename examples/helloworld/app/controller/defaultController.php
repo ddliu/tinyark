@@ -8,4 +8,9 @@ class defaultController extends ArkController
     public function blogAction($blog_id, $blog_slug){
         return 'blog:'.$blog_id.'; slug:'.$blog_slug;
     }
+
+    public function aboutAction()
+    {
+        return 'hello';
+    }
 }
