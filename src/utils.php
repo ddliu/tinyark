@@ -51,22 +51,26 @@ function ark_parse_query_path($key = 'r'){
     $q = array();
     $script_name = $_SERVER['SCRIPT_NAME'];
     $request_uri = $_SERVER['REQUEST_URI'];
+    if(false !== $pos = strpos($request_uri, '?')){
+        $request_uri = substr($request_uri, 0, $pos);
+    }
     $basename = basename($script_name);
 
     $basename_length = strlen($basename);
 
     $slash_pos = strrpos($script_name, '/');
-
     //remove base path
     $request_uri = substr($request_uri, $slash_pos + 1);
-
+    if($request_uri === false){
+        $request_uri = '';
+    }
     //pathinfo
     if(substr($request_uri, 0, $basename_length + 1) === $basename.'/' ){
         $q['mode'] = 0;
         $q['path'] = substr($request_uri, $basename_length + 1);
     }
     //rewrite
-    elseif($request_uri !== '' && (substr($request_uri, 0, $basename_length) !== $basename or isset($request_uri[$basename_length]))){
+    elseif($request_uri !== '' && (substr($request_uri, 0, $basename_length) !== $basename || isset($request_uri[$basename_length]))){
         $q['mode'] = 1;
         $q['path'] = $request_uri;
     }
@@ -179,45 +183,17 @@ function ark_config($key, $default = null){
     return Ark::app()->config->get($key, $default);
 }
 
-/**
- * Generate url
- * @param string $path
- * @param mixed $params
- * @return string
- */
-function ark_url($path = '', $params = null, $absolute = false, $https = null){
-    $url = APP_URL;
-    $rewrite = ark_config('rewrite', true);
-    if($path !== ''){
-        if($rewrite){
-            $url.=$path;
-        }
-        else{
-            $url.='?r='.$path;
-        }
-    }
-    if(null !== $params){
-        if(is_array($params)){
-            $params = http_build_query($params);
-        }
-        if($rewrite){
-            $url.='?'.$params;
-        }
-        else{
-            $url.='&'.$params;
-        }
-    }
-    
-    return $url;
+function ark_app_url($path = '', $params = null, $absolute = false, $https = null){
+    return Ark::app()->appUrl($path, $params, $absolute, $https);
 }
 
-function ark_url_named($name, $params = null, $absolute = false, $https = null)
+function ark_route_url($name, $params = null, $absolute = false, $https = null)
 {
-    return Ark::app()->generateUrl($name, $params, $absolute, $https);
+    return Ark::app()->routeUrl($name, $params, $absolute, $https);
 }
 
-function ark_assets($path, $absolute = false, $https = null){
-    return APP_URL.$path;
+function ark_asset_url($path, $absolute = false, $https = null){
+    return Ark::app()->appUrl($path, null, $absolute, $https);
 }
 
 function ark_event($event, $callback){

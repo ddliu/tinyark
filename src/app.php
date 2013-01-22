@@ -399,6 +399,11 @@ class ArkAppWeb extends ArkApp
         if(null === $response || false === $response){
             $response = Ark::getHttpErrorResponse(404);
         }
+
+
+        //@todo response filter
+        //$event = new ArkEvent('app.response', $this, $response);
+
         if ($response instanceof ArkResponse) {
             $response->prepare()->send();
         }
@@ -522,9 +527,75 @@ class ArkAppWeb extends ArkApp
     }
 
 
-    public function generateUrl($name, $attributes = null, $absolute = false, $https = null)
+    public function appUrl($path = '', $attributes = null, $absolute = false, $https = null)
     {
-        $name 
+        $path = ltrim($path, '/');
+        if($absolute){
+            if($https === null ){
+                $result = $this->request->getSchemeAndHttpHost();
+            }
+            elseif($https){
+                $result = 'https://'.$this->request->getHttpHost();
+            }
+            else{
+                $result = 'http://'.$this->request->getHttpHost();
+            }
+        }
+        else{
+            $result = '';
+        }
+
+        $result .= $this->request->getBasePath().'/'.$path;
+        if(is_array($attributes)){
+            $result .= http_build_query($attributes);
+        }
+
+        return $result;
+    }
+
+    public function routeUrl($name, $attributes = null, $absolute = false, $https = null)
+    {
+        if(false !== strpos($name, '/')){
+            $name = ltrim($name, '/');
+            $url = $name.($attributes?('?'.http_build_query($attributes)):'');
+        }
+        elseif(false === $url = $this->router->generate($name, (null !== $attributes)?$attributes:array())){
+            return false;
+        }
+
+        if($absolute){
+            if($https === null ){
+                $result = $this->request->getSchemeAndHttpHost();
+            }
+            elseif($https){
+                $result = 'https://'.$this->request->getHttpHost();
+            }
+            else{
+                $result = 'http://'.$this->request->getHttpHost();
+            }
+        }
+        else{
+            $result = '';
+        }
+        $result .= $this->request->getBasePath().'/';
+        if($url === '' || $url[0] === '?'){
+            return $result;
+        }
+
+        $url_mode = $this->config->get('route.mode', 'pathinfo');
+        //rewrite
+        if($url_mode === 'rewrite'){
+            $result .= $url;
+        }
+        //pathinfo
+        elseif($url_mode === 'pathinfo'){
+            $result .= 'index.php/'.$url;
+        }
+        else{
+            $result .= '?'.$this->config->get('route.route_var', 'r').'='.str_replace('?', '&', $url);
+        }
+        
+        return $result;
     }
 }
 

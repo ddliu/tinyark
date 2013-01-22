@@ -12,7 +12,7 @@ return array(
         ),
     ),
     'route' => array(
-    	'mode' => 'normal',
+    	'mode' => 'pathinfo',
         'route_var' => 'r',
         'rules' => array(
             array(

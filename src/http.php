@@ -132,6 +132,7 @@ class ArkRequest
 
     /**
      * Get url base path of current request
+     *     http://example.com/group/app/product-a.html => group/app
      * @return string
      */
     public function getBasePath()

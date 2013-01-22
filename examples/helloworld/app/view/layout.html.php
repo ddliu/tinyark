@@ -3,7 +3,7 @@
 <head>
 	<title><?php $this->block('title');?>Home<?php $this->endBlock();?> - TinyArk | Tiny PHP Framework On Open Platforms</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <link rel="stylesheet" type="text/css" href="<?php echo ark_assets('/assets/app.css');?>">
+    <link rel="stylesheet" type="text/css" href="<?php echo ark_asset_url('/assets/app.css');?>">
 </head>
 <body>
 <div class="wrap">

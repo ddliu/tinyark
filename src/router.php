@@ -162,7 +162,7 @@ class ArkRouter
     }
 
     protected function pathForGenerate($path){
-        return preg_replace('#<([a-zA-Z0-9_]+):[^>]+>#', '<\\1>', str_replace(array('(', ')', '?'), '', $path));
+        return str_replace('\\', '', preg_replace('#<([a-zA-Z0-9_]+):[^>]+>#', '<\\1>', str_replace(array('(', ')', '?'), '', $path)));
     }
 
     /**
