@@ -8,12 +8,14 @@ return array(
     'bundle' => array(
         'autodiscover' => false,
         'bundles' => array(
-
+            array(
+                'path' => APP_PATH.'/../../bundles/hello'
+            ),
         ),
     ),
     'route' => array(
     	'mode' => 'pathinfo',
-        'route_var' => 'r',
+        //'route_var' => 'r',
         'rules' => array(
             array(
                 'name' => 'home',
@@ -31,10 +33,10 @@ return array(
     ),
     'autoload' => array(
         'class' => array(
-            'TinyDB' => APP_DIR.'/vendor/tinydb/tinydb.php',
+            'TinyDB' => APP_PATH.'/vendor/tinydb/tinydb.php',
         ),
         'dir' => array(
-            APP_DIR.'/model',
+            APP_PATH.'/model',
         ),
     ),
     'services' => array(

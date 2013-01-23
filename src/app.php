@@ -179,7 +179,7 @@ abstract class ArkApp
             }
 
             if(null === $name){
-                $name = dirname($path);
+                $name = basename($path);
             }
             elseif(null === $path){
                 $path = $this->getBundleDir().'/'.$name;
@@ -279,11 +279,12 @@ class ArkAppWeb extends ArkApp
             $_POST = array_map('stripcslashes', $_POST);
             $_COOKIE = array_map('stripslashes', $_COOKIE);
         }
-        
-        parent::__construct($path);
 
         $this->request = new ArkRequest();
         $this->router = new ArkRouter();
+        
+        parent::__construct($path);
+
         $this->addRouterRules(
             $this->config->get('route.rules', array()), 
             null, 
@@ -422,7 +423,7 @@ class ArkAppWeb extends ArkApp
 
         $class = $match[2].'Controller';
         if(!class_exists($class)){
-            if(!isset($action['_bundle'])){
+            if(!isset($action['_bundle']) || '' === $action['_bundle']){
                 $path = $this->getAppPath();
             }
             elseif(!$bundle = $this->getBundle($action['_bundle'])){
@@ -453,68 +454,68 @@ class ArkAppWeb extends ArkApp
      */
     public function dispatch($event){
         if(false !== $rule = $this->router->match($event->data)){
-            $action = null;
-            if(!isset($rule['handler'])){
-                $action = array(
-                );
-                if(isset($rule['attributes']['_bundle'])){
-                    $action['_bundle'] = $rule['attributes']['_bundle'];
+            //action
+            if(!isset($rule['handler']) || (is_string($rule['handler']) && !function_exists($rule['handler']))){
+                $action = array();
+                $handler = $rule['handler'];
+                if($rule['handler'][0] === ':'){
+                    $parts = explode('/', $rule['handler'], 2);
+                    $action['_bundle'] = substr($parts[0], 1);
+                    $handler = $parts[1];
                 }
-                if(isset($rule['attributes']['_controller'])){
-                    $action['_controller'] = $rule['attributes']['_controller'];
+                else{
+                    $handler = ltrim($handler, '/');
                 }
-                if(isset($rule['attributes']['_action'])){
-                    $action['_action'] = $rule['attributes']['_action'];
-                }
-            }
-            else{
-                if(is_string($rule['handler']) && false !== strpos($rule['handler'], '/')){
-                    $action = array();
-                    $handler = $rule['handler'];
-                    if($rule['handler'][0] === ':'){
-                        $parts = explode('/', $rule['handler'], 2);
-                        $action['_bundle'] = substr($parts[0], 1);
-                        $handler = $parts[1];
+
+                if($handler !== ''){
+                    $last_slash = strrpos($handler, '/');
+                    if(false === $last_slash){
+                        $action['_action'] = $handler;
+                    }
+                    //ends with slash
+                    elseif($last_slash === strlen($handler) - 1){
+                        $action['_controller'] = substr($handler, 0, -1);
                     }
                     else{
-                        $handler = ltrim($handler, '/');
-                    }
-
-                    if($handler !== ''){
-                        $last_slash = strrpos($handler, '/');
-                        if(false === $last_slash){
-                            $action['_action'] = $handler;
-                        }
-                        //ends with slash
-                        elseif($last_slash === strlen($handler) - 1){
-                            $action['_controller'] = substr($handler, 0, -1);
-                        }
-                        else{
-                            $action['_controller'] = substr($handler, 0, $last_slash);
-                            $action['_action'] = substr($handler, $last_slash + 1);
-                        }
+                        $action['_controller'] = substr($handler, 0, $last_slash);
+                        $action['_action'] = substr($handler, $last_slash + 1);
                     }
                 }
-            }
-            if(!isset($action['_bundle'])){
-                //$action['_bundle'] = 'app';
-            }
-            if(!isset($action['_controller'])){
-                $action['_controller'] = 'default';
-            }
-            if(!isset($action['_action'])){
-                $action['_action'] = 'index';
-            }
 
+                if(!isset($action['_bundle'])){
+                    if(isset($rule['attributes']['_bundle'])){
+                        $action['_bundle'] = $rule['attributes']['_bundle'];
+                    }
+                }
+                if(!isset($action['_controller'])){
+                    if(isset($rule['attributes']['_controller'])){
+                        $action['_controller'] = $rule['attributes']['_controller'];
+                    }
+                    else{
+                        $action['_controller'] = 'default';
+                    }
+                }
+                if(!isset($action['_action'])){
+                    if(isset($rule['attributes']['_action'])){
+                        $action['_action'] = $rule['attributes']['_action'];
+                    }
+                    else{
+                        $action['_action'] = 'index';
+                    }
+                }
+
+                if(false === $handler = $this->findAction($action)){
+                    return false;
+                }
+            }
+            //callable handler
+            else{
+                $handler = $rule['handler'];
+            }
+            
             if(isset($rule['attributes'])){
                 foreach($rule['attributes'] as $k => $v){
                     $this->request->setAttribute($k, $v);
-                }
-            }
-
-            if($action){
-                if(false === $handler = $this->findAction($action)){
-                    return false;
                 }
             }
 

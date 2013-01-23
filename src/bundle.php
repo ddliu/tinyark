@@ -50,9 +50,6 @@ class ArkBundle
             $this->initCli();
         }
         else{
-            //route
-            $this->config->get('route')
-            
             $this->initWeb();
         }
     }
@@ -71,7 +68,7 @@ class ArkBundle
             $this->config->get('route.rules', array()), 
             $this->config->get('route.prefix'),
             $this->config->get('route.requirements'),
-            $this->config->get('route.defaults'),
+            $this->config->get('route.defaults', array()) + array('_bundle' => $this->getName())
         );
     }
 
@@ -86,15 +83,6 @@ class ArkBundle
     public function getDependencies()
     {
         return $this->config->get('bundle', $this->dependencies);
-    }
-
-
-
-    protected function registerRoute(){
-        if(null === $route_prefix = $this->config->get('route_prefi'))
-        $route = $this->config->get('route');
-        if($reoute && )
-
     }
 
     protected function registerCommand()

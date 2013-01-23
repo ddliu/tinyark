@@ -1,21 +1,22 @@
 <?php
 return array(
-    'bundle' => array(
-        'bundles' => array(
-            'comment' => array(
-                'route_prefix' => ''
-            )
-        ),
-    ),
     'route' => array(
         'prefix' => 'hello/',
-        'defaults' => array(
-        ),
-
         'rules' => array(
-            'hello_home' => '<:bundle>',
-            'hello_page' => '',
-            'comments/.*' => '<comment>',
+            array(
+                'name' => 'hello_home',
+                'path' => '',
+                'handler' => 'default/index'
+            ),
+            array(
+                'name' => 'hello_common',
+                'path' => '(<_controller:\w+>/(<_action:\w+>)?)?',
+            ),
+            array(
+                'name' => 'hello_product',
+                'path' => 'product/<product_name:\w+>\.html',
+                'handler' => 'default/product',
+            ),
         )
     )
 );
