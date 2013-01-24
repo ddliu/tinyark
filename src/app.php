@@ -26,6 +26,8 @@ abstract class ArkApp
 
     protected $path;
 
+    static $buildinBundles = array('twig', 'smarty', 'sae', 'ace', 'bae');
+
     public function __construct($path = null)
     {
         $this->event = new ArkEventManager();
@@ -59,7 +61,7 @@ abstract class ArkApp
             $this->container->register(
                 'view',
                 array(
-                    'class' => 'ArkView',
+                    'class' => 'ArkViewPHP',
                     'params' => array(
                         array(
                             'dir' => $this->getAppPath().'/view',
@@ -97,6 +99,18 @@ abstract class ArkApp
 
         if(isset($configs['file'])){
             ArkAutoload::registerFile($configs['file']);
+        }
+
+        if(isset($configs['namespace'])){
+            foreach ($configs['namespace'] as $namespace => $path) {
+                ArkAutoload::registerNamespace($namespace, $path);
+            }
+        }
+
+        if(isset($configs['prefix'])){
+            foreach ($configs['prefix'] as $prefix => $path) {
+                ArkAutoload::registerPrefix($prefix, $path);
+            }
         }
     }
 
@@ -148,14 +162,15 @@ abstract class ArkApp
     public function addBundle($v)
     {
         if(is_string($v)){
-            if(preg_match('#^[a-zA-Z0-9_]$#', $v)){
+            if(preg_match('#^[a-zA-Z0-9_]+$#', $v)){
                 //name
-                $this->registerBundleInfo($v);
+                $name = $this->registerBundleInfo($v);
             }
             else{
                 //path
-                $this->registerBundleInfo(null, $v);
+                $name = $this->registerBundleInfo(null, $v);
             }
+            $this->loadBundle($name);
         }
         elseif(is_array($v)){
             $name = $this->registerBundleInfo(
@@ -182,7 +197,13 @@ abstract class ArkApp
                 $name = basename($path);
             }
             elseif(null === $path){
-                $path = $this->getBundleDir().'/'.$name;
+                //buildin bundle
+                if(in_array($name, self::$buildinBundles)){
+                    $path = ARK_PATH.'/bundle/'.$name;
+                }
+                else{
+                    $path = $this->getBundleDir().'/'.$name;
+                }
             }
 
             $this->registeredBundleInfo[$name] = array(
@@ -218,7 +239,7 @@ abstract class ArkApp
 
             require($info['path'].'/bundle.php');
             $classname = str_replace(' ', '', ucwords(str_replace('_', ' ', $name))).'Bundle';
-            $this->bundles[$name] = new $classname($this, $info['configs']);
+            $this->bundles[$name] = new $classname($this, null, null, $info['configs']);
         }
 
         return true;

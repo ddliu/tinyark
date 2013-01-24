@@ -75,27 +75,32 @@ class ArkConfig
 
     /**
      * Merge configurations
-     * @param  string|null $key   null to merge from the top level, else to merge from specified key
+     * @param  string|array|null $key   null or array to merge from the top level, else to merge from specified key
      * @param  mixed $value None array value will be appended
      * @return ArkConfig
      */
-    public function merge($key, $value)
+    public function merge($key, $value = null)
     {
-        $array = &$this->configs;
-        if(null !== $key && '' !== $key){
-            foreach(explode('.', $key) as $segment){
-                if(!isset($array[$segment]) || !is_array($array[$segment])){
-                    $array[$segment] = array();
-                }
-                $array = &$array[$segment];
-            }
-        }
-
-        if(!is_array($value)){
-            $array[] = $value;
+        if(is_array($key)){
+            $this->mergeRecursiveWithOverwrite($this->configs, $key);
         }
         else{
-            $this->mergeRecursiveWithOverwrite($array, $value);
+            $array = &$this->configs;
+            if(null !== $key && '' !== $key){
+                foreach(explode('.', $key) as $segment){
+                    if(!isset($array[$segment]) || !is_array($array[$segment])){
+                        $array[$segment] = array();
+                    }
+                    $array = &$array[$segment];
+                }
+            }
+
+            if(!is_array($value)){
+                $array[] = $value;
+            }
+            else{
+                $this->mergeRecursiveWithOverwrite($array, $value);
+            }
         }
 
         return $this;

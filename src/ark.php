@@ -15,9 +15,9 @@ define('ARK_MICROTIME', microtime(true));
 define('ARK_TIMESTAMP', round(ARK_MICROTIME));
 
 //Path of the framework
-define('ARK_DIR' , dirname(__FILE__));
+define('ARK_PATH' , dirname(__FILE__));
 
-require_once(ARK_DIR.'/utils.php');
+require_once(ARK_PATH.'/utils.php');
 
 class Ark
 {
@@ -33,38 +33,40 @@ class Ark
 
             //register ark classes
             ArkAutoload::registerFile(array(
-                'ArkEventManager' => ARK_DIR.'/event.php',
-                'ArkEvent' => ARK_DIR.'/event.php',
-                'ArkApp' => ARK_DIR.'/app.php',
-                'ArkAppWeb' => ARK_DIR.'/app.php',
-                'ArkAppCli' => ARK_DIR.'/app.php',
+                'ArkEventManager' => ARK_PATH.'/event.php',
+                'ArkEvent' => ARK_PATH.'/event.php',
+                'ArkApp' => ARK_PATH.'/app.php',
+                'ArkAppWeb' => ARK_PATH.'/app.php',
+                'ArkAppCli' => ARK_PATH.'/app.php',
 
-                'ArkConfig' => ARK_DIR.'/config.php',
+                'ArkConfig' => ARK_PATH.'/config.php',
 
-                'ArkBundle' => ARK_DIR.'/bundle.php',
+                'ArkBundle' => ARK_PATH.'/bundle.php',
 
-                'ArkView' => ARK_DIR.'/view.php',
-                'ArkViewHelper' => ARK_DIR.'/view.php',
+                'ArkViewInterface' => ARK_PATH.'/view.php',
+                'ArkViewPHP' => ARK_PATH.'/view.php',
+                'ArkViewHelper' => ARK_PATH.'/view.php',
 
-                'ArkController' => ARK_DIR.'/controller.php',
+                'ArkController' => ARK_PATH.'/controller.php',
 
-                'ArkPagination' => ARK_DIR.'/pagination.php',
+                'ArkPagination' => ARK_PATH.'/pagination.php',
 
-                'ArkCacheBase' => ARK_DIR.'/cache.php',
-                'ArkCacheArray' => ARK_DIR.'/cache.php',
-                'ArkCacheFile' => ARK_DIR.'/cache.php',
-                'ArkCacheAPC' => ARK_DIR.'/cache.php',
-                'ArkCacheMemcache' => ARK_DIR.'/cache.php',
+                'ArkCacheBase' => ARK_PATH.'/cache.php',
+                'ArkCacheArray' => ARK_PATH.'/cache.php',
+                'ArkCacheFile' => ARK_PATH.'/cache.php',
+                'ArkCacheAPC' => ARK_PATH.'/cache.php',
+                'ArkCacheMemcache' => ARK_PATH.'/cache.php',
 
-                'ArkResponse' => ARK_DIR.'/http.php',
-                'ArkRequest' => ARK_DIR.'/http.php',
+                'ArkResponse' => ARK_PATH.'/http.php',
+                'ArkRequest' => ARK_PATH.'/http.php',
+                'ArkMimetype' => ARK_PATH.'/mimetype.php',
 
-                'ArkLoggerBase' => ARK_DIR.'/logger.php',
-                'ArkLoggerFile' => ARK_DIR.'/logger.php',
+                'ArkLoggerBase' => ARK_PATH.'/logger.php',
+                'ArkLoggerFile' => ARK_PATH.'/logger.php',
 
-                'ArkRouter' => ARK_DIR.'/router.php',
+                'ArkRouter' => ARK_PATH.'/router.php',
 
-                'ArkHttpClient' => ARK_DIR.'/httpclient.php',
+                'ArkHttpClient' => ARK_PATH.'/httpclient.php',
             ));
 
         }
@@ -78,14 +80,14 @@ class Ark
      * @return mixed
      */
     static public function renderInternal($template, $variables = null, $return = false){
-        $view = new ArkView();
+        $view = new ArkViewPHP();
 
-        return $view->render(ARK_DIR.'/internal/view/'.$template, $variables, $return);
+        return $view->render(ARK_PATH.'/internal/view/'.$template, $variables, $return);
     }
 
     static public function getHttpErrorResponse($http_code){
-        $view = new ArkView();
-        return new ArkResponse($view->render(ARK_DIR.'/internal/view/http_error.html.php', array(
+        $view = new ArkViewPHP();
+        return new ArkResponse($view->render(ARK_PATH.'/internal/view/http_error.html.php', array(
             'code' => $http_code,
             'title' => ArkResponse::getStatusTextByCode($http_code),
             'message' => ArkResponse::getStatusMessageByCode($http_code)
@@ -199,6 +201,9 @@ class ArkAutoload
         }
         
         //prefix
+        if(self::loadPrefix($name)){
+            return true;
+        }
         
         //namespace
         if(self::loadNamespace($name)){
@@ -274,6 +279,21 @@ class ArkAutoload
         }
         
         return false;
+    }
+
+    static public function registerPrefix($prefix, $path){
+        self::$prefixes[$prefix] = $path;
+    }
+
+    static public function loadPrefix($name){
+        foreach(self::$prefixes as $prefix => $path){
+            $prefix_length = strlen($prefix);
+            if(substr($name, 0, $prefix_length + 1) === $prefix.'_'){
+                $file = $path.DIRECTORY_SEPARATOR.str_replace('_', DIRECTORY_SEPARATOR, $name).'.php';
+                require($file);
+                return true;
+            }
+        }
     }
 }
 

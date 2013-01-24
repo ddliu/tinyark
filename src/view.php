@@ -7,7 +7,14 @@
  * @license MIT License (http://maxmars.net/license/MIT)
  */
 
-class ArkView
+interface ArkViewInterface
+{
+    public function assign($key, $value = null);
+
+    public function render($name, $variables, $return = false);
+}
+
+class ArkViewPHP implements ArkViewInterface
 {
     private $helpers = array();
 

@@ -712,7 +712,7 @@ class ArkMimetype
       'swf'    => 'image/vnd.rn-realflash'
     );
 
-    public function getMimeTypeByFileExt($ext, $default = null)
+    static public function getMimeTypeByFileExt($ext, $default = null)
     {
         return isset(self::$mimetypes[$ext])?self::$mimetypes[$ext]:$default;
     }

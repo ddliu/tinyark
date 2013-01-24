@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>{% block title %}Home{% endblock %} - TinyArk | Tiny PHP Framework On Open Platforms</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" type="text/css" href="{{ asset_url('/assets/app.css') }}" />
+</head>
+<body>
+<div class="wrap">
+    <div class="topnav">
+        <ul class="right">
+            <li><a href="#">Test</a></li>
+        </ul>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Examples</a></li>
+            <li><a href="#">Document</a></li>
+            <li><a href="#">Github</a></li>
+        </ul>
+    </div>
+    {% block content %}{% endblock %}
+    <div class="footer">
+    	<p>&copy; <?php echo date('Y', ARK_TIMESTAMP)?> <a href="http://maxmars.net/projects/tinyark">TinyArk</a> project</p>
+    	<p>Generated in {{ '%.1f'|format(process_time()*1000) }} ms</p>
+    </div>
+</div>
+</body>
+</html>
