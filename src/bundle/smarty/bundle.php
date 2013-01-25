@@ -1,5 +1,5 @@
 <?php
-class App extends ArkAppWeb
+class SmartyBundle extends ArkBundle
 {
     public function init()
     {

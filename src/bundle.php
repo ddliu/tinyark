@@ -15,8 +15,19 @@ class ArkBundle
     protected $dependencies;
     protected $app;
     protected $reflected;
-    protected $started = false;
+
+    /**
+     * Path to bundle
+     * @var string
+     */
     protected $path;
+
+    /**
+     * Path to bundle resources
+     * @var string
+     */
+    protected $resourcePath;
+
     protected $name;
     public $config;
 
@@ -90,14 +101,9 @@ class ArkBundle
         
     }
 
-
-
-    public function getConfigFile(){
-        return $this->getPath().'/config.php';
-    }
-
     protected function loadConfig(){
-        $configs = include($this->getConfigFile());
+        $config_file = $this->locateResource('@'.$this->getName().'/config.php');
+        $configs = @include($config_file);
         $this->config = new ArkConfig(is_array($configs)?$configs:array());
     }
 
@@ -111,6 +117,54 @@ class ArkBundle
         }
         
         return $this->path;
+    }
+
+    public function getResourcePath()
+    {
+        if(null === $this->resourcePath){
+            $this->resourcePath = $this->getPath().'/resource';
+        }
+
+        return $this->resourcePath;
+    }
+
+    public function locateResource($resource)
+    {
+        if($resource[0] !== '@'){
+            throw new Exception('Resource does not start with @');
+        }
+
+        $parts = explode('/', substr($resource, 1), 2);
+        //app
+        if($parts[0] === ''){
+            return $this->app->getResourcePath().'/'.$parts[1];
+        }
+        elseif($parts[1] === '.'){
+            return $this->getResourcePath().'/'.$parts[1];
+        }
+        else{
+            $path = $this->getResourcePath().'/'.$parts[0].'Bundle/'.$parts[1];
+            if(file_exists($path)){
+                return $path;
+            }
+            else{
+                if($parts[0] === $this->getName()){
+                    return $this->getResourcePath().'/'.$parts[1];
+                }
+                else{
+                    return $this->app->getBundle($parts[0])->getResourcePath().'/'.$parts[1];
+                }
+            }
+        }
+    }
+
+    public function locateView($view)
+    {
+        if(false === $pos = strpos($view, '/')){
+            return false;
+        }
+
+        return $this->locateResource(substr($view, 0, $pos).'/view'.substr($view, $pos));
     }
 
     /**

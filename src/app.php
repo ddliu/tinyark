@@ -14,7 +14,7 @@ abstract class ArkApp
 {
     protected $container;
 
-    protected $bundles;
+    protected $bundles = array();
 
     protected $registeredBundleInfo = array();
 
@@ -24,7 +24,17 @@ abstract class ArkApp
 
     public $event;
 
+    /**
+     * Path to app
+     * @var string
+     */
     protected $path;
+
+    /**
+     * Path to app resource
+     * @var string
+     */
+    protected $resourcePath;
 
     static $buildinBundles = array('twig', 'smarty', 'sae', 'ace', 'bae');
 
@@ -64,7 +74,8 @@ abstract class ArkApp
                     'class' => 'ArkViewPHP',
                     'params' => array(
                         array(
-                            'dir' => $this->getAppPath().'/view',
+                            'locator' => array($this, 'locateView'),
+                            //'dir' => $this->getAppPath().'/resource/view',
                             'extract' => true,
                             //'ext' => '.php',
                         )
@@ -131,6 +142,15 @@ abstract class ArkApp
         }
         
         return $this->path;
+    }
+
+    public function getResourcePath()
+    {
+        if(null === $this->resourcePath){
+            $this->resourcePath = $this->getAppPath().'/resource';
+        }
+
+        return $this->resourcePath;
     }
 
     public function getBundleDir()
@@ -246,7 +266,7 @@ abstract class ArkApp
     }
     
     public function getConfigFile(){
-        return $this->getAppPath().'/config.php';
+        return $this->getAppPath().'/resource/config.php';
     }
     
     public function loadConfigs(){
@@ -254,6 +274,38 @@ abstract class ArkApp
         $this->config = new ArkConfig(is_array($configs)?$configs:array());
 
         return $this;
+    }
+
+
+    public function locateResource($resource)
+    {
+        if($resource[0] !== '@'){
+            throw new Exception('Resource does not start with @');
+        }
+
+        $parts = explode('/', substr($resource, 1), 2);
+        //app
+        if($parts[0] === ''){
+            return $this->getResourcePath().'/'.$parts[1];
+        }
+        else{
+            $path = $this->getResourcePath().'/'.$parts[0].'Bundle/'.$parts[1];
+            if(file_exists($path)){
+                return $path;
+            }
+            else{
+                return $this->getBundle($parts[0])->getResourcePath().'/'.$parts[1];
+            }
+        }
+    }
+
+    public function locateView($view)
+    {
+        if(false === $pos = strpos($view, '/')){
+            return false;
+        }
+
+        return $this->locateResource(substr($view, 0, $pos).'/view'.substr($view, $pos));
     }
 
     protected function getClassPath(){
@@ -479,7 +531,7 @@ class ArkAppWeb extends ArkApp
             if(!isset($rule['handler']) || (is_string($rule['handler']) && !function_exists($rule['handler']))){
                 $action = array();
                 $handler = $rule['handler'];
-                if($rule['handler'][0] === ':'){
+                if($rule['handler'][0] === '@'){
                     $parts = explode('/', $rule['handler'], 2);
                     $action['_bundle'] = substr($parts[0], 1);
                     $handler = $parts[1];

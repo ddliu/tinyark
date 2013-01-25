@@ -9,7 +9,12 @@ return array(
         'autodiscover' => false,
         'bundles' => array(
             array(
-                'path' => APP_PATH.'/../../bundles/hello'
+                'path' => APP_PATH.'/../../bundles/hello',
+                'configs' => array(
+                    'route' => array(
+                        'prefix' => 'hello-bundle/',
+                    )
+                )
             ),
         ),
     ),
@@ -30,23 +35,5 @@ return array(
             'about\.html' => 'default/about',
             'contact\.html' => 'default/contact',
         )
-    ),
-    'autoload' => array(
-        'class' => array(
-            'TinyDB' => APP_PATH.'/vendor/tinydb/tinydb.php',
-        ),
-        'dir' => array(
-            APP_PATH.'/model',
-        ),
-    ),
-    'services' => array(
-        'db' => array(
-            'class' => 'TinyDB',
-            'params' => array(
-                'mysql:host=localhost;dbname=sakila',
-                'root',
-                '1qaz2wsx',
-            ),
-        ),
     ),
 );

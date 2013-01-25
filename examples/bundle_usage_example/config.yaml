@@ -1,3 +1,0 @@
-handle:
-	- hostaccess: if(path ~ "^/app\/") deny "all"
-	- rewrite: if(!is_file()) goto "/index.php"

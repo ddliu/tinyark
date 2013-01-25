@@ -34,7 +34,7 @@ class ArkViewPHP implements ArkViewInterface
     private $properties = array();
 
     protected $options = array(
-        //'ext' => '.php',
+        //'locator' => callable, //how to locate view file
         //'extract' => true, //extract variables
     );
 
@@ -72,15 +72,17 @@ class ArkViewPHP implements ArkViewInterface
      * @return string
      */
     public function getViewFile($name){
+        if(isset($this->options['locator'])){
+            if($path = call_user_func($this->options['locator'], $name)){
+                return $path;
+            }
+        }
         $path = '';
         if(isset($this->options['dir'])){
             $path.=$this->options['dir'].'/';
         }
         
         $path.=$name;
-        if(isset($this->options['ext'])){
-            $path.=$this->options['ext'];
-        }
         return $path;
     }
 

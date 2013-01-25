@@ -1,4 +1,4 @@
-<?php $this->extend('layout.html.php');?>
+<?php $this->extend('@/layout.html.php');?>
 <?php $this->block('title');?>Hello world<?php $this->endBlock();?>
 <?php $this->block('content');?>
 <div class="page-header">

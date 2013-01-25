@@ -4,9 +4,9 @@ class ArkViewTwig implements ArkViewInterface
 {
     protected $twig;
 
-    public function __construct($path, $twig_options = null)
+    public function __construct($path, $twig_options = null, $locator = null)
     {
-        $loader = new Twig_Loader_Filesystem($path);
+        $loader = new ArkTwigFileSystemLoader($path, $locator);
         $this->twig = new Twig_Environment($loader, $twig_options);
     }
 
