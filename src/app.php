@@ -90,7 +90,6 @@ abstract class ArkApp
         //bundles
         $this->loadBundles();
         $this->init();
-        
         //app is ready
         $this->event->dispatch('app.ready', $this);
     }
@@ -168,7 +167,6 @@ abstract class ArkApp
         foreach($this->config->get('bundle.bundles', array()) as $v){
             $this->addBundle($v);
         }
-
         //auto discover
         if($this->config->get('bundle.autodiscover')){
             if($bundle_dirs = ark_sub_dirs($this->getBundleDir())){
@@ -210,7 +208,7 @@ abstract class ArkApp
     {
         if(!isset($this->registeredBundleInfo[$name])){
             if(null === $name && null === $path){
-                return false;
+                throw new Exception('Invalid bundle info');
             }
 
             if(null === $name){
@@ -254,6 +252,8 @@ abstract class ArkApp
             $info = $this->registeredBundleInfo[$name];
 
             if(!file_exists($info['path'].'/bundle.php')){
+                throw new Exception(sprintf('Bundle not found: %s at %s', $name, $info['path']));
+                
                 return false;
             }
 
