@@ -301,6 +301,10 @@ abstract class ArkApp
 
     public function locateView($view)
     {
+        if($view[0] !== '@'){
+            $view = '@/'.$view;
+        }
+        
         if(false === $pos = strpos($view, '/')){
             return false;
         }
