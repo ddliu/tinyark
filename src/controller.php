@@ -63,8 +63,8 @@ class ArkController{
      * @param string $url
      */
     public function redirect($url){
-        header('location:'.$url);
-        exit;
+        $response = new ArkResponse('', 302, array('Location' => $url));
+        return $response;
     }
     
     /**
