@@ -362,6 +362,7 @@ class ArkAppWeb extends ArkApp
         
         parent::__construct($path);
 
+        ini_set('default_charset', $this->config->get('charset', 'utf-8'));
         $this->addRouterRules(
             $this->config->get('route.rules', array()), 
             null, 
