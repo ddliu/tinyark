@@ -111,9 +111,10 @@ class ArkHttpClient
      * @param  string $method Request method, GET/POST/PUT
      * @param  string $url    Request url
      * @param  mixed $params
+     * @param  array $headers 
      * @return ArkHttpClientResponse
      */
-    public function request($method, $url, $params = null){
+    public function request($method, $url, $params = null, $headers = null){
         $curl_options = $this->getCurlOptions();
         $options = $this->sessionOptions + $this->defaultOptions;
 
@@ -142,6 +143,15 @@ class ArkHttpClient
             $curl_options[CURLOPT_PUT] = true;
         }
 
+        if($headers){
+            if(isset($curl_options[CURLOPT_HTTPHEADER])){
+                $curl_options[CURLOPT_HTTPHEADER] = $headers + $curl_options[CURLOPT_HEADER];
+            }
+            else{
+                $curl_options[CURLOPT_HTTPHEADER] = $headers;
+            }
+        }
+
         $ch = curl_init();
         curl_setopt_array($ch, $curl_options);
         $content = curl_exec($ch);
@@ -161,19 +171,27 @@ class ArkHttpClient
         return new ArkHttpClientResponse($content, $info, $errno, $error);
     }
 
-    public function get($url, $params = null)
+    public function get($url, $params = null, $headers = null)
     {
-        return $this->request('GET', $url, $params);
+        return $this->request('GET', $url, $params, $headers);
     }
 
-    public function post($url, $params = null)
+    public function post($url, $params = null, $headers = null)
     {
-        return $this->request('POST', $url, $params);
+        return $this->request('POST', $url, $params, $headers = null);
     }
 
-    public function put($url, $params = null)
+    /**
+     * Request with put method
+     * @param  string $url
+     * @param  array|string $params
+     * @param  array $headers
+     * @return ArkHttpClientResponse
+     * @todo support put data
+     */
+    public function put($url, $params = null, $headers = null)
     {
-        return $this->request('PUT', $url, $params);
+        return $this->request('PUT', $url, $params, $headers = null);
     }
 
     /**

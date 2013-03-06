@@ -43,6 +43,12 @@ class HttpClientTest extends PHPUnit_Framework_TestCase{
 
         $response = $client->get('http://a.com');
         $this->assertEquals($response->hasError(), true);
+
+        $ua = 'Tinyark HTTP Client';
+        $response = $client->get('http://whatsmyuseragent.com', null, array(
+            'User-Agent: '.$ua,
+        ));
+        $this->assertContains($ua, $response->getContent());
     }
 
 }
