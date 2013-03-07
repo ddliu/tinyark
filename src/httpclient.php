@@ -100,6 +100,20 @@ class ArkHttpClient
         return $curl_options;
     }
 
+    protected function normalizeHeaders($headers){
+        $result = array();
+        foreach($headers as $k => $v){
+            if(is_string($k)){
+                $result[] = $k.':'.$v;
+            }
+            else{
+                $result[] = $v;
+            }
+        }
+
+        return $result;
+    }
+
     protected function clearSession()
     {
         $this->sessionOptions = array();
@@ -120,7 +134,7 @@ class ArkHttpClient
 
         //fix url
         //remove anchor
-        if(null !== $params && $method != 'POST'){
+        if(null !== $params && 'POST' !== $method){
             if(is_array($params)){
                 $params = http_build_query($params);
             }
@@ -138,6 +152,9 @@ class ArkHttpClient
             if(null !== $params){
                 $curl_options[CURLOPT_POSTFIELDS] = $params;
             }
+            else{
+                $curl_options[CURLOPT_POSTFIELDS] = '';
+            }
         }
         elseif($method == 'PUT'){
             $curl_options[CURLOPT_PUT] = true;
@@ -150,6 +167,10 @@ class ArkHttpClient
             else{
                 $curl_options[CURLOPT_HTTPHEADER] = $headers;
             }
+        }
+
+        if(isset($curl_options[CURLOPT_HTTPHEADER])){
+            $curl_options[CURLOPT_HTTPHEADER] = $this->normalizeHeaders($curl_options[CURLOPT_HTTPHEADER]);
         }
 
         $ch = curl_init();
