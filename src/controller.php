@@ -50,12 +50,16 @@ class ArkController{
     }
     
     /**
-     * Output json data
+     * Json response
      * @param mixed $data
      */
     public function renderJson($data){
-        header('Content-type: application/json');
-        echo json_encode($data);
+        if(!is_string($data)){
+            $data = json_encode($data);
+        }
+        return new ArkResponse($data, 200, array(
+            'Content-type' => 'application/json'
+        ));
     }
 
     /**
