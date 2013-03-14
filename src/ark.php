@@ -91,7 +91,7 @@ class Ark
             'code' => $http_code,
             'title' => ArkResponse::getStatusTextByCode($http_code),
             'message' => ArkResponse::getStatusMessageByCode($http_code)
-        )), $http_code);
+        ), true), $http_code);
     }
 
     static public function app(){
