@@ -11,7 +11,7 @@
  * ArkHttpClient based on CURL
  *
  * $client = new ArkHttpClient($options);
- * $client->setOption(options)->get('http://example.com/index.html')->getContent();
+ * $client->session(options)->get('http://example.com/index.html')->getContent();
  * options:
  *     - curl options:
  *         CURLOPT_URL or url...
@@ -22,9 +22,9 @@ class ArkHttpClient
 {
     protected $curl;
 
-    protected $defaultOptions = array(
+    protected $options = array(
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HEADER => false,
+        CURLOPT_HEADER => true,
         CURLOPT_AUTOREFERER => true,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_SSL_VERIFYPEER => false,
@@ -34,26 +34,26 @@ class ArkHttpClient
 
     protected $sessionOptions = array();
 
-    public function __construct($defaultOptions = null)
+    public function __construct($options = null)
     {
-        if(null !== $defaultOptions){
-            $this->defaultOptions = $defaultOptions + $this->defaultOptions;
+        if(null !== $options){
+            $this->options = $options + $this->options;
         }
     }
 
-    public function setDefaultOption($key, $value = null)
+    public function setOption($key, $value = null)
     {
         if(is_array($key)){
-            $this->defaultOptions = $key + $this->defaultOptions;
+            $this->options = $key + $this->options;
         }
         else{
-            $this->defaultOptions[$key] = $value;
+            $this->options[$key] = $value;
         }
 
         return $this;
     }
 
-    public function setOption($key, $value = null)
+    public function session($key, $value = null)
     {
         if(is_array($key)){
             $this->sessionOptions = $key + $this->sessionOptions;
@@ -66,14 +66,14 @@ class ArkHttpClient
     }
 
     /**
-     * Generate CURL options from defaultOptions and sessionOptions
+     * Generate CURL options from options and sessionOptions
      * 
      * @return array
      */
     protected function getCurlOptions()
     {
-        $options = $this->sessionOptions + $this->defaultOptions;
-        $curl_options = $this->toCurlOptions($this->sessionOptions) + $this->toCurlOptions($this->defaultOptions);
+        $options = $this->sessionOptions + $this->options;
+        $curl_options = $this->toCurlOptions($this->sessionOptions) + $this->toCurlOptions($this->options);
 
         //parent as referer
         if(!isset($curl_options[CURLOPT_REFERER]) && isset($options['parent'])){
@@ -130,7 +130,7 @@ class ArkHttpClient
      */
     public function request($method, $url, $params = null, $headers = null){
         $curl_options = $this->getCurlOptions();
-        $options = $this->sessionOptions + $this->defaultOptions;
+        $options = $this->sessionOptions + $this->options;
 
         //fix url
         //remove anchor
@@ -162,7 +162,7 @@ class ArkHttpClient
 
         if($headers){
             if(isset($curl_options[CURLOPT_HTTPHEADER])){
-                $curl_options[CURLOPT_HTTPHEADER] = $headers + $curl_options[CURLOPT_HEADER];
+                $curl_options[CURLOPT_HTTPHEADER] = $headers + $curl_options[CURLOPT_HTTPHEADER];
             }
             else{
                 $curl_options[CURLOPT_HTTPHEADER] = $headers;
@@ -175,6 +175,7 @@ class ArkHttpClient
 
         $ch = curl_init();
         curl_setopt_array($ch, $curl_options);
+        $response_headers = null;
         $content = curl_exec($ch);
 
         $this->clearSession();
@@ -189,7 +190,17 @@ class ArkHttpClient
             $info = array();
         }
 
-        return new ArkHttpClientResponse($content, $info, $errno, $error);
+        if(isset($curl_options[CURLOPT_HEADER]) && $curl_options[CURLOPT_HEADER]){
+            if(isset($info['header_size'])){
+                $response_headers = substr($content, 0, $info['header_size']);
+                $content = substr($content, $info['header_size']);
+            }
+
+            //note that following method is not reliable: http://stackoverflow.com/questions/11359276/php-curl-exec-returns-both-http-1-1-100-continue-and-http-1-1-200-ok-separated-b
+            //list($response_headers, $content) = explode("\r\n\r\n", $content, 2);
+        }
+
+        return new ArkHttpClientResponse($response_headers, $content, $info, $errno, $error);
     }
 
     public function get($url, $params = null, $headers = null)
@@ -717,6 +728,7 @@ class ArkHttpClientResponse
     protected $errno;
     protected $error;
     protected $info;
+    protected $headers;
     protected $content;
 
     /**
@@ -726,14 +738,44 @@ class ArkHttpClientResponse
      * @param integer $errno
      * @param string $error
      */
-    public function __construct($content, $info, $errno, $error)
+    public function __construct($headers, $content, $info, $errno, $error)
     {
+        $this->headers = $headers;
         $this->content = $content;
         $this->info = $info;
         $this->errno = $errno;
         $this->error = $error;
     }
 
+    public function getHeader($name = null)
+    {
+        if(null === $this->headers){
+            return false;
+        }
+        if(!is_array($this->headers)){
+            $headers = $this->headers;
+            $this->headers = array();
+            foreach (explode("\r\n", trim($headers)) as $i => $line) {
+                if($i !== 0){
+                    list($key, $value) = explode(': ', $line);
+                    $this->headers[strtoupper($key)] = trim($value);
+                }
+            }
+        }
+
+        if(null === $name){
+            return $this->headers;
+        }
+        else{
+            $name = strtoupper($name);
+            if(isset($this->headers[$name])){
+                return $this->headers[$name];
+            }
+            else{
+                return false;
+            }
+        }
+    }
 
     public function getContent()
     {
