@@ -138,8 +138,15 @@ class ArkContainer
         $this->services[$name] = $value;
     }
 
-    public function register($name, $value){
-        $this->configs[$name] = $value;
+    public function register($name, $value = null){
+        if(is_array($name)){
+            foreach ($name as $key => $value) {
+                $this->configs[$key] = $value;
+            }
+        }
+        else{
+            $this->configs[$name] = $value;
+        }
     }
 
     protected function initService($name){

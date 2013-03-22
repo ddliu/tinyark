@@ -121,6 +121,7 @@ class ArkHttpClient
 
     /**
      * Send HTTP request
+     * @todo  multipart support
      * 
      * @param  string $method Request method, GET/POST/PUT
      * @param  string $url    Request url
@@ -150,6 +151,9 @@ class ArkHttpClient
         if($method == 'POST'){
             $curl_options[CURLOPT_POST] = true;
             if(null !== $params){
+                if(is_array($params)){
+                    $params = http_build_query($params);
+                }
                 $curl_options[CURLOPT_POSTFIELDS] = $params;
             }
             else{
