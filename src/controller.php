@@ -58,7 +58,7 @@ class ArkController{
             $data = json_encode($data);
         }
         return new ArkResponse($data, 200, array(
-            'Content-type' => 'application/json'
+            'Content-Type' => 'application/json'
         ));
     }
 
