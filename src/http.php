@@ -58,8 +58,17 @@ class ArkRequest
      */
     public function isSecure()
     {
-        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
-            || $_SERVER['SERVER_PORT'] == 443) {
+        if (
+            $_SERVER['SERVER_PORT'] != 80
+            && 
+            (
+                !empty($_SERVER['HTTPS']) 
+                && 
+                $_SERVER['HTTPS'] !== 'off'
+                || 
+                $_SERVER['SERVER_PORT'] == 443
+            )
+        ) {
 
             return true;
         }
