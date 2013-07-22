@@ -91,7 +91,7 @@ class ArkHttpClient
                 $curl_options[$key] = $value;
             }
             else{
-                if(is_defined('CURLOPT_'.strtoupper($key))){
+                if(defined('CURLOPT_'.strtoupper($key))){
                     $curl_options[constant('CURLOPT_'.strtoupper($key))] = $value;
                 }
             }
