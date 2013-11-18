@@ -91,7 +91,7 @@ class ArkHttpClient
                 $curl_options[$key] = $value;
             }
             else{
-                if(is_defined('CURLOPT_'.strtoupper($key))){
+                if(defined('CURLOPT_'.strtoupper($key))){
                     $curl_options[constant('CURLOPT_'.strtoupper($key))] = $value;
                 }
             }
@@ -129,7 +129,7 @@ class ArkHttpClient
      * @param  array $headers 
      * @return ArkHttpClientResponse
      */
-    public function request($method, $url, $params = null, $headers = null){
+    public function request($method, $url, $params = null, $headers = null, $multipart = false){
         $curl_options = $this->getCurlOptions();
         $options = $this->sessionOptions + $this->options;
 
@@ -151,7 +151,10 @@ class ArkHttpClient
         if($method == 'POST'){
             $curl_options[CURLOPT_POST] = true;
             if(null !== $params){
-                if(is_array($params)){
+                if($multipart && is_string($params)) {
+                    parse_str($params, $params);
+                }
+                else if (!$multipart && is_array($params)) {
                     $params = http_build_query($params);
                 }
                 $curl_options[CURLOPT_POSTFIELDS] = $params;
@@ -212,9 +215,9 @@ class ArkHttpClient
         return $this->request('GET', $url, $params, $headers);
     }
 
-    public function post($url, $params = null, $headers = null)
+    public function post($url, $params = null, $headers = null, $multipart = false)
     {
-        return $this->request('POST', $url, $params, $headers = null);
+        return $this->request('POST', $url, $params, $headers = null, $multipart);
     }
 
     /**

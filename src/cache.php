@@ -527,7 +527,7 @@ class ArkCacheMemcache extends ArkCacheBase
         }
         else{
             if(!$this->setConnected()) return false;;
-            return $this->memcache->set($this->getKey($key), $value, isset($options['compress'])?$options['compress']:0, $this->getExpire($ttl));
+            return $this->memcache->set($this->getKey($key), $value, (isset($options['compress']) && $options['compress'])?MEMCACHE_COMPRESSED:0, $this->getExpire($ttl));
         }
     }
     
