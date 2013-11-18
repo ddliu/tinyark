@@ -1,0 +1,19 @@
+{
+    "name": "ddliu/tinyark",
+    "description": "Lightweight PHP framework for open platforms",
+    "version": "0.1.0",
+    "keywords": ["framework"],
+    "homepage": "http://codecent.com/tinyark/index.html",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Liu Dong",
+            "email": "ddliuhb@gmail.com",
+            "homepage": "http://codecent.com",
+            "role": "Developer"
+        }
+    ],
+    "autoload": {
+        "files": ["src/ark.php"]
+    }
+}

@@ -1,5 +1,7 @@
-#TinyArk
+# TinyArk
+
+[![Build Status](https://travis-ci.org/ddliu/tinyark.png)](https://travis-ci.org/ddliu/tinyark)
 
 Tiny PHP framework for open platforms.
 
-[Document](http://maxmars.net/projects/tinyark/)
+[Document](http://codecent.com/tinyark/index.html)

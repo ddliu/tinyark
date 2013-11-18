@@ -3,10 +3,8 @@
  * Tinyark Framework
  *
  * @copyright Copyright 2012-2013, Dong <ddliuhb@gmail.com>
- * @link http://maxmars.net/projects/tinyark Tinyark project
- * @license MIT License (http://maxmars.net/license/MIT)
+ * @license MIT License
  */
 
 require dirname(__FILE__).'/src/ark.php';
-Ark::autoloadFramework();
 date_default_timezone_set('Asia/Shanghai');

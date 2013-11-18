@@ -87,6 +87,9 @@ abstract class ArkApp
         //autoload custom classes
         $this->addAutoloadFromConfig($this->config->get('autoload', array()));
 
+        // exception handler
+        set_exception_handler(array($this, 'handleException'));
+
         //bundles
         $this->loadBundles();
         $this->init();
@@ -331,6 +334,10 @@ abstract class ArkApp
      */
     abstract public function run();
 
+    public function handleException($exception)
+    {
+        $this->event->dispatch('app.exception', $exception);
+    }
 }
 
 /**
