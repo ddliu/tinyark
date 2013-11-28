@@ -196,8 +196,8 @@ function ark_asset_url($path, $absolute = false, $https = null){
     return Ark::app()->appUrl($path, null, $absolute, $https);
 }
 
-function ark_event($event, $callback){
-    Ark::app()->getContainer()->get('event')->bind($event, $callback);
+function ark_event(){
+    call_user_func_array(array(Ark::app()->event, 'attach'), func_get_args());
 }
 
 # Autoload functions

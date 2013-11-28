@@ -336,7 +336,9 @@ abstract class ArkApp
 
     public function handleException($exception)
     {
-        $this->event->dispatch('app.exception', $exception);
+        $this->event->dispatch('app.exception', $this, array(
+            'exception' => $exception
+        ));
     }
 }
 
