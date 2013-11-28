@@ -273,7 +273,7 @@ abstract class ArkApp
     }
     
     public function loadConfigs(){
-        $configs = include($this->getConfigFile());
+        $configs = @include($this->getConfigFile());
         $this->config = new ArkConfig(is_array($configs)?$configs:array());
 
         return $this;

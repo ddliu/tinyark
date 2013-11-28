@@ -10,7 +10,7 @@
 class ViewTest extends PHPUnit_Framework_TestCase{
     protected function getView()
     {
-        return new ArkView(array(
+        return new ArkViewPHP(array(
             'dir' => dirname(__FILE__).'/view'
         ));
     }

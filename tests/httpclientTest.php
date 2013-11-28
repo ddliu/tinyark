@@ -32,7 +32,7 @@ class HttpClientTest extends PHPUnit_Framework_TestCase{
         $response = $client->get('http://php.net');
         $this->assertEquals($response->getStatusCode(), 200);
         $this->assertEquals($response->getInfo('url'), 'http://php.net');
-        $this->assertRegExp('/\>downloads\<\/a\>/', $response->getContent());
+        $this->assertRegExp('/\>downloads\<\/a\>/i', $response->getContent());
 
         $response = $client->get('http://www.yahoo.com/notexist');
         $this->assertEquals($response->getStatusCode(), 404);

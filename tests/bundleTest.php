@@ -13,7 +13,8 @@ class BundleTest extends PHPUnit_Framework_TestCase{
     public function setup()
     {
         require_once(dirname(__FILE__).'/bundle/bundle.php');
-        $this->bundle = new HelloBundle();
+        $app = new ArkAppCli('.');
+        $this->bundle = new HelloBundle($app);
     }
 
     public function testCommon()
