@@ -2,8 +2,9 @@
 /**
  * Tinyark Framework
  *
- * @copyright Copyright 2012-2013, Dong <ddliuhb@gmail.com>
- * @license MIT License
+ * @link http://github.com/ddliu/tinyark
+ * @copyright  Liu Dong (http://codecent.com)
+ * @license MIT
  */
 
 class BundleTest extends PHPUnit_Framework_TestCase{
