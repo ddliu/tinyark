@@ -49,24 +49,32 @@ table {
 
 /* end css reset */
 
+/*
+theme: http://www.colourlovers.com/palette/937624/Dance_To_Forget
+#FF4242
+#F4FAD2
+#D4EE5E
+#E1EDB9
+#F0F2EB
+*/
 body{
+    background: #F0F2EB;
     font-size: 16px;
     color: #333;
 }
 a, a:visited{
-    color: blue;
-    text-decoration: none;
+    color: #666;
+    /*text-decoration: none;*/
 }
 a:hover{
-    color: lightblue;
+    color: #999;
 }
 .wrap{
-    width:980px;
+    width:500px;
     margin:0 auto;
 }
 .topnav{
     margin: 30px 0;
-    overflow:hidden;
     border-bottom: 3px solid #999;
 }
 .topnav li{
@@ -97,9 +105,19 @@ h1{
 }
 
 .page-header{
-    border-bottom: 1px solid whiteSmoke;
-    padding: 5px 0;
-    margin: 0 0 20px 0;
+    background: #D4EE5E;
+    color: #FFF;
+    text-align: center;
+    /*border-bottom: 10px solid #FF4242;*/
+    padding: 25px 0;
+    margin: 50px 0 0 0;
+}
+
+.content {
+    background: #F4FAD2;
+    padding: 50px 20px;
+    border-top: 10px solid #E1EDB9;
+    border-bottom: 5px solid #E1EDB9;
 }
 
 p{
@@ -108,6 +126,7 @@ p{
 }
 
 ul{
+    padding: 5px 0 5px 10px;
     padding-left: 10px;
 }
 li{
@@ -117,9 +136,7 @@ li{
 
 /* Footer */
 .footer{
-    margin-top: 30px;
     padding-top: 10px;
-    border-top: 3px solid #999;
     font-size: 14px;
     color: #999;
 }

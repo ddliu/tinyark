@@ -78,3 +78,7 @@ class ArkController{
         return $_SERVER['REQUEST_METHOD'] === 'POST';
     }
 }
+
+class ArkControllerAction extends ArkController
+{
+}

@@ -98,8 +98,8 @@ class Ark
         return ArkApp::$instance;
     }
 
-    static public function createWebApp($path){
-        return new ArkAppWeb($path);
+    static public function createWebApp($path, $env = 'prod', $debug = false){
+        return new ArkAppWeb($path, $env, $debug);
     }
 }
 

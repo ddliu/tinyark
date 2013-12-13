@@ -127,11 +127,10 @@ class ArkRouter
 
             //Only fetch named matches as attributes
             foreach($match as $k => $v){
-                if(!is_int($k)){
+                if(!is_int($k) && $v !== ''){
                     $attributes[$k] = $v;
                 }
             }
-
             return $attributes;
         }
         else{

@@ -38,7 +38,7 @@ abstract class ArkApp
 
     static $buildinBundles = array('twig', 'smarty', 'sae', 'ace', 'bae');
 
-    public function __construct($path = null)
+    public function __construct($path = null, $env = 'prod', $debug = false)
     {
         $this->event = new ArkEventManager();
 
@@ -51,8 +51,25 @@ abstract class ArkApp
         }
 
         //path definations
-        if (!defined('APP_PATH')) {
-            define('APP_PATH', $this->getAppPath());
+        if (!defined('ARK_APP_PATH')) {
+            define('ARK_APP_PATH', $this->getAppPath());
+        }
+
+        if (!defined('ARK_APP_DEBUG')) {
+            define('ARK_APP_DEBUG', $debug);
+        }
+
+        if (!defined('ARK_APP_ENV')) {
+            define('ARK_APP_ENV', $env);
+        }
+
+        if(ARK_APP_DEBUG){
+            ini_set('display_errors', 1);
+            error_reporting(E_ALL^E_NOTICE);
+        }
+        else{
+            ini_set('display_errors', 0);
+            error_reporting(~E_NOTICE);
         }
         
         $this->loadConfigs();
@@ -89,6 +106,7 @@ abstract class ArkApp
 
         // exception handler
         set_exception_handler(array($this, 'handleException'));
+        $this->event->attach('app.exception', array($this, 'handleExceptionDefault'), true, ArkEventManager::PRIORITY_LOWEST);
 
         //bundles
         $this->loadBundles();
@@ -340,6 +358,15 @@ abstract class ArkApp
             'exception' => $exception
         ));
     }
+
+    public function handleExceptionDefault($exception)
+    {
+        if (ARK_APP_DEBUG) {
+            throw $exception;
+        } else {
+            echo 'Error occurred';
+        }
+    }
 }
 
 /**
@@ -350,16 +377,7 @@ class ArkAppWeb extends ArkApp
     protected $request;
     public $router;
 
-    public function __construct($path = null){
-        if($_SERVER['REMOTE_ADDR'] === '127.0.0.1'){
-            ini_set('display_errors', 1);
-            error_reporting(E_ALL^E_NOTICE);
-        }
-        else{
-            ini_set('display_errors', 0);
-            error_reporting(~E_NOTICE);
-        }
-
+    public function __construct($path = null, $env = 'prod', $debug = false){
         if(get_magic_quotes_gpc()){
             $_GET = array_map('stripcslashes', $_GET);
             $_POST = array_map('stripcslashes', $_POST);
@@ -369,7 +387,7 @@ class ArkAppWeb extends ArkApp
         $this->request = new ArkRequest();
         $this->router = new ArkRouter();
         
-        parent::__construct($path);
+        parent::__construct($path, $env, $debug);
 
         ini_set('default_charset', $this->config->get('charset', 'utf-8'));
         $this->addRouterRules(
@@ -378,7 +396,7 @@ class ArkAppWeb extends ArkApp
             $this->config->get('route.requirements'),
             $this->config->get('route.defaults')
         );
-        define('APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
+        define('ARK_APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
     }
 
     /**
@@ -455,8 +473,26 @@ class ArkAppWeb extends ArkApp
      * {@inheritdoc}
      */
     protected function init(){
+        
         $this->event->attach('app.404', 'ark_404', true, ArkEventManager::PRIORITY_LOWEST);
         $this->event->attach('app.dispatch', array($this, 'dispatch'), false, ArkEventManager::PRIORITY_LOWEST);
+    }
+
+    public function handleExceptionDefault($exception)
+    {
+        $view = new ArkViewPHP();
+        $http_code = 500;
+        $message = ArkResponse::getStatusMessageByCode($http_code);
+        if (ARK_APP_DEBUG) {
+            $message .= '<br /><pre>'.$exception.'</pre>';
+        }
+        $response = new ArkResponse($view->render(ARK_PATH.'/internal/view/http_error.html.php', array(
+            'code' => $http_code,
+            'title' => ArkResponse::getStatusTextByCode($http_code),
+            'message' => $message,
+        ), true), $http_code);
+
+        $response->prepare()->send();
     }
 
     public function forward()
@@ -504,22 +540,50 @@ class ArkAppWeb extends ArkApp
 
     public function findAction($action)
     {
-        if(!preg_match('#^([a-zA-Z0-9_-]+/)*([a-zA-Z][a-zA-Z0-9_]*)$#', $action['_controller'], $match) || !preg_match('#^[a-zA-Z][a-zA-Z0-9_]*$#', $action['_action'])){
+        // validate action
+        if (!preg_match('#^[a-zA-Z][a-zA-Z0-9_]*$#', $action['_action'])) {
             return false;
         }
 
-        $class = $match[2].'Controller';
-        if(!class_exists($class)){
-            if(!isset($action['_bundle']) || '' === $action['_bundle']){
-                $path = $this->getAppPath();
-            }
-            elseif(!$bundle = $this->getBundle($action['_bundle'])){
+        if (isset($action['_controller']) && $action['_controller'] !== '') {
+            if (!preg_match('#^([a-zA-Z0-9_-]+/)*([a-zA-Z][a-zA-Z0-9_]*)$#', $action['_controller'], $match)) {
                 return false;
             }
-            else{
-                $path = $bundle->getPath();
+        }
+
+        // get path
+        if(!isset($action['_bundle']) || '' === $action['_bundle']){
+            $path = $this->getAppPath();
+        }
+        elseif(!$bundle = $this->getBundle($action['_bundle'])){
+            return false;
+        }
+        else{
+            $path = $bundle->getPath();
+        }
+
+        // action file
+        $class = $action['_action'].'Action';
+
+        if (!class_exists($class)) {
+            $action_file = $path.'/controller/'.$action['_controller'].'/'.$class.'Action.php';
+            if (file_exists($action_file)) {
+                require($action_file);
             }
-            $controller_file = $path.'/controller/'.$match[0].'Controller.php';
+        }
+
+        if (class_exists($class)) {
+            $instance = new $class();
+            if (method_exists($instance, 'init')) {
+                return array($instance, 'init');
+            }
+        }
+
+        // controller file
+        $class = $match[2].'Controller';
+
+        if(!class_exists($class)){
+            $controller_file = $path.'/controller/'.$action['_controller'].'Controller.php';
             if(!file_exists($controller_file)){
                 return false;
             }
@@ -574,13 +638,13 @@ class ArkAppWeb extends ArkApp
                         $action['_bundle'] = $rule['attributes']['_bundle'];
                     }
                 }
-                if(!isset($action['_controller'])){
+                if(!isset($action['_controller']) && $action['_controller'] !== ''){
                     if(isset($rule['attributes']['_controller'])){
                         $action['_controller'] = $rule['attributes']['_controller'];
                     }
-                    else{
-                        $action['_controller'] = 'default';
-                    }
+                    // else{
+                    //     $action['_controller'] = 'default';
+                    // }
                 }
                 if(!isset($action['_action'])){
                     if(isset($rule['attributes']['_action'])){
