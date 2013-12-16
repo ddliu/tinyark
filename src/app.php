@@ -354,7 +354,7 @@ abstract class ArkApp
 
     public function handleException($exception)
     {
-        $this->event->dispatch('app.exception', $this, array(
+        $this->dispatchResponseEvent('app.exception', $this, array(
             'exception' => $exception
         ));
     }
@@ -366,6 +366,8 @@ abstract class ArkApp
         } else {
             echo 'Error occurred';
         }
+
+        $this->respond($resonse);
     }
 }
 
@@ -474,8 +476,13 @@ class ArkAppWeb extends ArkApp
      */
     protected function init(){
         
-        $this->event->attach('app.404', 'ark_404', true, ArkEventManager::PRIORITY_LOWEST);
+        $this->event->attach('app.404', array($this, 'handle404Default'), false, ArkEventManager::PRIORITY_LOWEST);
         $this->event->attach('app.dispatch', array($this, 'dispatch'), false, ArkEventManager::PRIORITY_LOWEST);
+    }
+
+    public function handle404Default($event)
+    {
+        return Ark::getHttpErrorResponse(404);
     }
 
     public function handleExceptionDefault($exception)
@@ -486,13 +493,12 @@ class ArkAppWeb extends ArkApp
         if (ARK_APP_DEBUG) {
             $message .= '<br /><pre>'.$exception.'</pre>';
         }
-        $response = new ArkResponse($view->render(ARK_PATH.'/internal/view/http_error.html.php', array(
+        
+        return new ArkResponse($view->render(ARK_PATH.'/internal/view/http_error.html.php', array(
             'code' => $http_code,
             'title' => ArkResponse::getStatusTextByCode($http_code),
             'message' => $message,
         ), true), $http_code);
-
-        $response->prepare()->send();
     }
 
     public function forward()
@@ -511,22 +517,34 @@ class ArkAppWeb extends ArkApp
         //Request method validation
         if(!in_array($q['method'], array('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'))){
             $response = Ark::getHttpErrorResponse(405);
+            $this->respond($resonse);    
         }
         else{
-            $event = new ArkEvent('app.dispatch', $this, $q);
-            $this->event->dispatch($event);
-
-            $response = $event->result;
+            $this->dispatchResponseEvent('app.dispatch', $this, $q);
         }
+    }
 
-        //404
-        if(null === $response || false === $response){
-            $response = Ark::getHttpErrorResponse(404);
+    public function dispatchResponseEvent($event, $source = null, $data = array())
+    {
+        if (is_string($event)) {
+            $event = new ArkEvent($event, $source, $data);
         }
+        $this->event->dispatch($event, $source, $data);
 
+        if ($event->result !== null) {
+            $this->respond($event->result);
+        }
+    }
 
-        //@todo response filter
-        //$event = new ArkEvent('app.response', $this, $response);
+    /**
+     * Respond and exit
+     * @param  mixed $response
+     */
+    public function respond($response, $exit = true)
+    {
+        // response
+        $event = new ArkEvent('app.response', $this, $response);
+        $this->event->dispatch($event);
 
         if ($response instanceof ArkResponse) {
             $response->prepare()->send();
@@ -536,6 +554,8 @@ class ArkAppWeb extends ArkApp
         }
 
         $this->event->dispatch('app.shutdown', $this);
+
+        $exit && exit();
     }
 
     public function findAction($action)
@@ -656,7 +676,8 @@ class ArkAppWeb extends ArkApp
                 }
 
                 if(false === $handler = $this->findAction($action)){
-                    return false;
+                    $this->dispatchResponseEvent('app.404', $this);
+                    return;
                 }
             }
             //callable handler
@@ -674,7 +695,8 @@ class ArkAppWeb extends ArkApp
             return call_user_func_array($handler, $handler_params);
         }
         else{
-            return false;
+            $this->dispatchResponseEvent('app.404', $this);
+            return;
         }
     }
 

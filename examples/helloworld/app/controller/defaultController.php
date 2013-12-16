@@ -9,4 +9,9 @@ class defaultController extends ArkController
     {
         return 'hello';
     }
+
+    public function exceptionAction()
+    {
+        throw new Exception("error");
+    }
 }

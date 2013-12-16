@@ -122,7 +122,6 @@ class ArkRouter
             if(!preg_match('#^'.$pattern.'$#', $request['path'], $match)){
                 return false;
             }
-
             $attributes = isset($rule['defaults'])?$rule['defaults']:array();
 
             //Only fetch named matches as attributes

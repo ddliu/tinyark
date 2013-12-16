@@ -784,6 +784,11 @@ class ArkHttpClientResponse
         }
     }
 
+    public function __toString()
+    {
+        return $this->content;
+    }
+
     public function getContent()
     {
         return $this->content;

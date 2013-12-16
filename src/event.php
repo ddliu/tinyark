@@ -117,11 +117,11 @@ class ArkEventManager
                     $result = call_user_func($callback[0], $event);
                 }
 
-                if($result !== null){
+                if($result !== null && $result !== true && $result !== false){
                     $event->result = $result;
                 }
                 if(false === $result){
-                    $event->stopPropagation();
+                    $event->stop();
                     return false;
                 }
                 if($event->isStopped()){
@@ -154,7 +154,10 @@ class ArkEvent
         $this->data = $data;
     }
 
-    public function stopPropagation()
+    /**
+     * Stop event propagation
+     */
+    public function stop()
     {
         $this->stopped = true;
     }
