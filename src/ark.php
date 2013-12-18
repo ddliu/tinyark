@@ -61,8 +61,11 @@ class Ark
                 'ArkRequest' => ARK_PATH.'/http.php',
                 'ArkMimetype' => ARK_PATH.'/mimetype.php',
 
-                'ArkLoggerBase' => ARK_PATH.'/logger.php',
-                'ArkLoggerFile' => ARK_PATH.'/logger.php',
+                'ArkLoggerHandlerAbstract' => ARK_PATH.'/logger.php',
+                'ArkLoggerHandlerEcho' => ARK_PATH.'/logger.php',
+                'ArkLoggerHandlerFile' => ARK_PATH.'/logger.php',
+                'ArkLoggerHandlerErrorLog' => ARK_PATH.'/logger.php',
+                'ArkLogger' => ARK_PATH.'/logger.php',
 
                 'ArkRouter' => ARK_PATH.'/router.php',
 

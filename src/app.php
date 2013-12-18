@@ -190,7 +190,7 @@ abstract class ArkApp
         }
         //auto discover
         if($this->config->get('bundle.autodiscover')){
-            if($bundle_dirs = ark_sub_dirs($this->getBundleDir())){
+            if($bundle_dirs = _ark_sub_dirs($this->getBundleDir())){
                 foreach($bundle_dirs as $name){
                     $this->addBundle($name);
                 }
@@ -510,7 +510,7 @@ class ArkAppWeb extends ArkApp
      * {@inheritdoc}
      */
     public function run(){
-        $q = ark_parse_query_path($this->config->get('route.route_var', 'r'));
+        $q = _ark_parse_query_path($this->config->get('route.route_var', 'r'));
         $q['https'] = $this->request->isSecure();
         $q['method'] = $this->request->getMethod();
 
@@ -691,7 +691,7 @@ class ArkAppWeb extends ArkApp
                 }
             }
 
-            $handler_params = ark_handler_params($handler, $rule['attributes']);
+            $handler_params = _ark_handler_params($handler, $rule['attributes']);
             return call_user_func_array($handler, $handler_params);
         }
         else{

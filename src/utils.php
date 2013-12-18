@@ -32,13 +32,6 @@ function ark_bundle($name)
 }
 
 /**
- * 404 page
- */
-function ark_404(){
-    Ark::getHttpErrorResponse(404)->prepare()->send();
-}
-
-/**
  * Parse the query path
  * url_mod 0: pathinfo, 1: rewrite, 2: normal(?r=)
  * @param  string $key
@@ -47,7 +40,7 @@ function ark_404(){
  *         - path: 
  *         - basename
  */
-function ark_parse_query_path($key = 'r'){
+function _ark_parse_query_path($key = 'r'){
     $q = array();
     $script_name = $_SERVER['SCRIPT_NAME'];
     $request_uri = $_SERVER['REQUEST_URI'];
@@ -89,46 +82,6 @@ function ark_parse_query_path($key = 'r'){
     return $q;
 }
 
-
-/**
- * Route
- * @param string $path
- * @param array $config
- * @return array|boolean
- */
-function ark_route($path, $config = null){
-    $params = array();
-    if($config){
-        foreach($config as $pattern => $target){
-            $pattern = '#^'.$pattern.'$#';
-            if(preg_match($pattern, $path, $match)){
-                foreach($match as $k => $v){
-                    if(is_string($k)){
-                        $params[$k] = $v;
-                    }
-                }
-                if(!is_string($target)){
-                    return array(
-                        'handler' => $target,
-                        'params' => $params,
-                    );
-                }
-                $path = preg_replace($pattern, $target, $path);
-                break;
-            }
-        }
-    }
-    
-    if(!preg_match('#^(?<c>(\w+/)*)(?<a>\w+)?$#', $path, $match)){
-        return false;
-    }
-    return array(
-        'controller' => rtrim($match['c'], '/'),
-        'action' => $match['a'] === null?'':$match['a'],
-        'params' => $params,
-    );
-}
-
 /**
  * Add a route pattern with callback
  * @param string $pattern
@@ -144,7 +97,7 @@ function ark_match($pattern, $callback){
  * @param  array $params
  * @return array
  */
-function ark_handler_params($handler, $params)
+function _ark_handler_params($handler, $params)
 {
     $result = array();
     if(is_array($handler)){
@@ -212,7 +165,7 @@ function ark_autoload_dir($dir, $hasChild = true){
 
 # io access
 
-function ark_sub_dirs($path){
+function _ark_sub_dirs($path){
     if(!$dirh = opendir($path)){
         return false;
     }

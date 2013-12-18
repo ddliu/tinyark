@@ -11,14 +11,28 @@ class LoggerTest extends PHPUnit_Framework_TestCase
 {
     public function testAll()
     {
-        $logger = new ArkLoggerFile(array(
-            'file' => dirname(__FILE__).'/log/file.log',
+        $logger = new ArkLogger(array(
+            array(
+                'class' => 'ArkLoggerHandlerEcho',
+            ),
+            array(
+                'class' => 'ArkLoggerHandlerFile',
+                'level' => array('debug'),
+                'file' => dirname(__FILE__).'/log/debug.log',
+            ),
+            array(
+                'class' => 'ArkLoggerHandlerErrorLog',
+                'level' => 'error',
+                'delay' => true,
+            ),
         ));
-        $logger->trace('trace');
-        $logger->debug('debug');
+        $logger->debug('debug', true);
         $logger->info('info');
-        $logger->warn('warn');
+        $logger->notice('notice');
+        $logger->warning('warning');
         $logger->error('error');
-        $logger->fatal('fatal');
+        $logger->critical('critical');
+        $logger->alert('alert');
+        $logger->emergency('emergency');
     }
 }

@@ -8,127 +8,307 @@
  */
 
 /**
- * Logger base class
+ * Abstract logger handler
  */
-abstract class ArkLoggerBase
+abstract class ArkLoggerHandlerAbstract
 {
-    static $levels = array(
-        'trace' => 0,
-        'debug' => 1,
-        'info' => 2,
-        'warn' => 3,
-        'error' => 4,
-        'fatal' => 5,
-    );
-
-    protected $messages = array();
-
     /**
-     * Logger options
-     *  - level
-     *  - batch
-     * @var array
+     * Handler Options
+     *  - level: Log levels can be handled by this handler
+     *  - delay: If set to true, all logs will be processed with batchSend on destruction 
+     * @var Array
      */
-    protected $options = array();
+    protected $options;
 
-    public function __construct($options = array()) {
-        if(!isset($options['level']) || !isset(self::$levels[$options['level']])){
-            $options['level'] = 0;
-        }
-        else{
-            $options['level'] = self::$levels[$options['level']];
+    protected $logs = array();
+
+    public function __construct($options = array())
+    {
+        if (isset($options['level'])) {
+            if (is_array($options['level'])) {
+                $options['levelInteger'] = array();
+                foreach ($options['level'] as $level) {
+                    $options['levelInteger'][] = ArkLogger::$levels[$level];
+                }
+            } else {
+                $options['levelInteger'] = ArkLogger::$levels[$options['level']];
+            }
+        } else {
+            $options['levelInteger'] = 0;
         }
         $this->options = $options;
     }
 
+    public function getOption($key, $default = null)
+    {
+        if (isset($this->options[$key])) {
+            return $this->options[$key];
+        }
+
+        return $default;
+    }
+
+    protected function getTraceMessages($trace)
+    {
+        $messages = array();
+        foreach ($trace as $entry) {
+            // ignore current file
+            if (isset($entry['file']) && $entry['file'] !== __FILE__) {
+                $messages[] = $entry['file'].'#'.$entry['line'].' '.$entry['class'].$entry['type'].$entry['function'].'()';
+            }
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Format log message
+     * @param  array $log
+     * @return string
+     */
+    protected function format($log)
+    {
+        $result = date('Y-m-d H:i:s')."\t".$log['level']."\t".$log['message'];
+        if (isset($log['trace'])) {
+            $messages = $this->getTraceMessages($log['trace']);
+            $result .= "\n\t".implode("\n\t", $messages);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Should this level of log be handled.
+     * @param  integer $levelInteger
+     * @return boolean
+     */
+    public function checkLevel($levelInteger)
+    {
+        $level = $this->options['levelInteger'];
+        return 
+            (is_array($level) && in_array($levelInteger, $level))
+            || 
+            (is_integer($level) && $levelInteger >= $level);
+    }
+
+    /**
+     * Add log to list
+     * @param array $log
+     */
+    public function add($log)
+    {
+        $this->logs[] = $log;
+    }
+
+    /**
+     * Process batch send if any
+     */
     public function __destruct()
     {
-        foreach($this->messages as $message){
-            $this->write($message[0], $message[1], $message[2]);
+        if ($this->logs) {
+            $this->batchSend($this->logs);
         }
     }
 
-    abstract protected function write($message, $level, $time);
+    /**
+     * Process the log
+     * @param  array $log
+     */
+    abstract public function send($log);
 
-    protected function formatTrace($trace)
+    /**
+     * Process batch send, override this method if needed.
+     * @param  array $logs
+     */
+    public function batchSend($logs)
     {
-        return $trace['file'].'#'.$trace['line'].' '.$trace['class'].$trace['type'].$trace['function'].'()';
-    }
-
-    protected function formatMessage($message, $level, $time)
-    {
-        return date('Y-m-d H:i:s', $time)."\t".$level."\t".$message;
-    }
-
-    public function log($message, $level, $trace = false)
-    {
-        if(self::$levels[$level] >= $this->options['level']){
-            if($trace){
-                $trace_messages = array();
-                foreach(debug_backtrace() as $t){
-                    if(isset($t['file']) && $t['file'] != __FILE__){
-                        $trace_messages[] = $this->formatTrace($t);
-                    }
-                }
-                $message.="\n\t".implode("\n\t", $trace_messages);
-            }
-            $message_entry = array($message, $level, time());
-            if(isset($this->options['delay']) && $this->options['delay']){
-                $this->messages[] = $message_entry;
-            }
-            else{
-                $this->write($message_entry[0], $message_entry[1], $message_entry[2]);
-            }
+        foreach ($logs as $log) {
+            $this->send($log);
         }
-    }
-
-    public function trace($message)
-    {
-        $this->log($message, 'trace', true);
-    }
-
-    public function debug($message, $trace = false)
-    {
-        $this->log($message, 'debug', $trace);
-    }
-
-    public function info($message, $trace = false)
-    {
-        $this->log($message, 'info', $trace);
-    }
-
-    public function warn($message, $trace = false)
-    {
-        $this->log($message, 'warn', $trace);
-    }
-
-    public function error($message, $trace = false)
-    {
-        $this->log($message, 'error', $trace);
-    }
-
-    public function fatal($message, $trace = false)
-    {
-        $this->log($message, 'fatal', $trace);
     }
 }
 
 /**
- * File logger
- * Additional options:
- *  - file(log file path)
- *  - filesize(max filesize of log file)
- *  @todo Use new log file when current log file is full;
- *        support deplay writing
+ * Simple log handler implement
  */
-class ArkLoggerFile extends ArkLoggerBase
+class ArkLoggerHandlerEcho extends ArkLoggerHandlerAbstract
 {
-    protected function write($message, $level, $time)
+    public function send($log)
     {
+        echo $this->format($log)."\n";
+    }
+}
+
+/**
+ * File log handler
+ * options:
+ *  - file
+ */
+class ArkLoggerHandlerFile extends ArkLoggerHandlerAbstract
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function send($log)
+    {
+        $text = $this->format($log);
         $filename = $this->options['file'];
         if($fh = fopen($filename, 'a')){
-            fwrite($fh, $this->formatMessage($message, $level, $time)."\n");
+            fwrite($fh, $text."\n");
             fclose($fh);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function batchSend($logs)
+    {
+        $text = '';
+        foreach ($logs as $log) {
+            $text .= $this->format($log)."\n";
+        }
+
+        $filename = $this->options['file'];
+
+        if ($fh = fopen($filename, 'a')) {
+            fwrite($fh, $text);
+            fclose($fh);
+        }
+    }
+}
+
+/**
+ * error_log handler
+ * options:
+ *  - message_type
+ *  - destination
+ *  - extra_headers
+ * @see http://php.net/manual/en/function.error-log.php
+ */
+class ArkLoggerHandlerErrorLog extends ArkLoggerHandlerAbstract
+{
+    public function send($log)
+    {
+        $text = $this->format($log);
+        error_log($text, $this->getOption('message_type'), $this->getOption('destination'), $this->getOption('extra_headers'));
+    }
+
+    public function batchSend($logs)
+    {
+        if ($this->getOption('message_type') == 1 || $this->getOption('message_type') == 3) {
+            // mail or file
+            $text = array();
+            foreach ($logs as $log) {
+                $text[] = $this->format($log);
+            }
+            error_log(implode("\n", $text), $this->getOption('message_type'), $this->getOption('destination'), $this->getOption('extra_headers'));
+        } else {
+            return parent::batchSend($logs);
+        }
+    }
+}
+
+/**
+ * Simple logger library
+ */
+class ArkLogger
+{
+    /**
+     * Log levels defination
+     * @see https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-3-logger-interface.md#3-psrlogloggerinterface
+     * @var array
+     */
+    static $levels = array(
+        'debug' => 0,
+        'info' => 1,
+        'notice' => 2,
+        'warning' => 3,
+        'error' => 4,
+        'critical' => 5,
+        'alert' => 6,
+        'emergency' => 7,
+    );
+
+    protected $handlers;
+
+    public function __construct($handlers = array())
+    {
+        $this->handlers = $handlers;
+    }
+
+    public function addHandler($handler)
+    {
+        $this->handlers[] = $handler;
+    }
+
+    public function emergency($message, $trace = false)
+    {
+        $this->log('emergency', $message, $trace);
+    }
+
+    public function alert($message, $trace = false)
+    {
+        $this->log('alert', $message, $trace);
+    }
+
+    public function critical($message, $trace = false)
+    {
+        $this->log('critical', $message, $trace);
+    }
+
+    public function error($message, $trace = false)
+    {
+        $this->log('error', $message, $trace);
+    }
+
+    public function warning($message, $trace = false)
+    {
+        $this->log('warning', $message, $trace);
+    }
+
+    public function notice($message, $trace = false)
+    {
+        $this->log('notice', $message, $trace);
+    }
+
+    public function info($message, $trace = false)
+    {
+        $this->log('info', $message, $trace);
+    }
+
+    public function debug($message, $trace = false)
+    {
+        $this->log('debug', $message, $trace);
+    }
+
+    public function log($level, $message, $trace = false)
+    {
+        $levelInteger = self::$levels[$level];
+        foreach ($this->handlers as $k => $handler) {
+            if (is_array($handler)) {
+                $class = $handler['class'];
+                unset($handler['class']);
+                $handler = $this->handlers[$k] = new $class($handler);
+            }
+
+            if ($handler->checkLevel($levelInteger)) {
+                $log = array(
+                    'message' => $message,
+                    'level' => $level,
+                    'time' => microtime(true),
+                );
+
+                if ($trace) {
+                    $log['trace'] = debug_backtrace();
+                }
+
+                if ($handler->getOption('delay', false)) {
+                    $handler->add($log);
+                } else {
+                    $handler->send($log);
+                }
+            }
         }
     }
 }
