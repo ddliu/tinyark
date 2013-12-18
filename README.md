@@ -8,6 +8,11 @@ Tiny PHP framework for open platforms.
 
 ## Changelog
 
+### v0.1.1(2013-12-18)
+
+- Rewrite logger
+- Code cleanup
+
 ### v0.1.0(2013-11-28) 
 
 - Fix testing

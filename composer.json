@@ -1,7 +1,7 @@
 {
     "name": "ddliu/tinyark",
     "description": "Lightweight PHP framework for open platforms",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "keywords": ["framework"],
     "homepage": "http://codecent.com/tinyark/index.html",
     "license": "MIT",
