@@ -588,7 +588,7 @@ class ArkAppWeb extends ArkApp
         $class = $action['_action'].'Action';
 
         if (!class_exists($class)) {
-            $action_file = $path.'/controller/'.$action['_controller'].'/'.$class.'Action.php';
+            $action_file = $path.'/controller/'.$action['_controller'].'/'.$class.'.php';
             if (file_exists($action_file)) {
                 require($action_file);
             }
@@ -596,8 +596,8 @@ class ArkAppWeb extends ArkApp
 
         if (class_exists($class)) {
             $instance = new $class();
-            if (method_exists($instance, 'init')) {
-                return array($instance, 'init');
+            if (method_exists($instance, 'run')) {
+                return array($instance, 'run');
             }
         }
 

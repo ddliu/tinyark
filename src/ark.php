@@ -48,6 +48,7 @@ class Ark
                 'ArkViewHelper' => ARK_PATH.'/view.php',
 
                 'ArkController' => ARK_PATH.'/controller.php',
+                'ArkControllerAction' => ARK_PATH.'/controller.php',
 
                 'ArkPagination' => ARK_PATH.'/pagination.php',
 
