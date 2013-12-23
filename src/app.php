@@ -388,6 +388,9 @@ class ArkAppWeb extends ArkApp
 
         $this->request = new ArkRequest();
         $this->router = new ArkRouter();
+        if (!defined('ARK_APP_URL')) {
+            define('ARK_APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
+        }
         
         parent::__construct($path, $env, $debug);
 
@@ -398,7 +401,6 @@ class ArkAppWeb extends ArkApp
             $this->config->get('route.requirements'),
             $this->config->get('route.defaults')
         );
-        define('ARK_APP_URL', $this->request->getSchemeAndHttpHost().$this->request->getBasePath().'/');
     }
 
     /**
