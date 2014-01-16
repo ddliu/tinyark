@@ -71,6 +71,8 @@ class Ark
                 'ArkRouter' => ARK_PATH.'/router.php',
 
                 'ArkHttpClient' => ARK_PATH.'/httpclient.php',
+
+                'ArkValidator' => ARK_PATH.'/validator.php',
             ));
 
         }

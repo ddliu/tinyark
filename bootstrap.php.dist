@@ -8,4 +8,4 @@
  */
 
 require dirname(__FILE__).'/src/ark.php';
-date_default_timezone_set('Asia/Shanghai');
+date_default_timezone_set('UTC');
