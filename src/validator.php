@@ -117,6 +117,8 @@ class ArkValidator
         } else {
             $this->fieldMessages[$name] = $message;
         }
+
+        return $this;
     }
 
     static public function notifyParams($params)
@@ -497,8 +499,12 @@ class ArkValidatorErrorCollection
      * @param  string  $field 
      * @return boolean
      */
-    public function has($field)
+    public function has($field = null)
     {
+        if (null === $field) {
+            return !empty($this->errors);
+        }
+
         return isset($this->errors[$field]);
     }
 
@@ -513,6 +519,26 @@ class ArkValidatorErrorCollection
             return $this->errors[$field];
         } else {
             return array();
+        }
+    }
+
+    /**
+     * Add error to collection
+     * @param mixed $field
+     * @param string $error
+     */
+    public function add($field, $error = null)
+    {
+        if (null === $error) {
+            if (!is_array($field)) {
+                $this->errors['.'] = $field;
+            } else {
+                foreach ($field as $key => $value) {
+                    $this->errors[$key][] = $value;
+                }
+            }
+        } else {
+            $this->errors[$field][] = $error;
         }
     }
 
