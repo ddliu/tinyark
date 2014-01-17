@@ -723,7 +723,7 @@ class ArkAppWeb extends ArkApp
 
         $result .= $this->request->getBasePath().'/'.$path;
         if(is_array($attributes)){
-            $result .= http_build_query($attributes);
+            $result .= '?'.http_build_query($attributes);
         }
 
         return $result;
