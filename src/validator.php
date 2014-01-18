@@ -471,6 +471,8 @@ class ArkValidatorException extends Exception{
  */
 class ArkValidatorErrorCollection
 {
+    protected $errors = array();
+
     public function __construct($errors)
     {
         $this->errors = $errors;
@@ -537,7 +539,7 @@ class ArkValidatorErrorCollection
     {
         if (null === $error) {
             if (!is_array($field)) {
-                $this->errors['.'] = $field;
+                $this->errors['.'][] = $field;
             } else {
                 foreach ($field as $key => $value) {
                     $this->errors[$key][] = $value;
