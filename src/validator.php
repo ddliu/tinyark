@@ -60,7 +60,7 @@ class ArkValidator
         }
     }
 
-    static public function addDefaultRule($name, $ruleHandler = null) 
+    static public function addDefaultRule($name, $ruleHandler = null, $message = null) 
     {
         if (is_array($name)) {
             foreach ($name as $key => $value) {
@@ -68,10 +68,13 @@ class ArkValidator
             }
         } else {
             self::$defaultCustomRules[$name] = $ruleHandler;
+            if (null !== $message) {
+                self::$defaultRuleMessages[$name] = $message;
+            }
         }
     }
 
-    public function addRule($name, $ruleHandler = null)
+    public function addRule($name, $ruleHandler = null, $message = null)
     {
         if (is_array($name)) {
             foreach ($name as $key => $value) {
@@ -79,6 +82,9 @@ class ArkValidator
             }
         } else {
             $this->customRules[$name] = $ruleHandler;
+            if (null !== $message) {
+                $this->ruleMessages[$name] = $message;
+            }
         }
 
         return $this;
