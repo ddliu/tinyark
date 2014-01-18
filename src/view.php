@@ -11,6 +11,8 @@ interface ArkViewInterface
 {
     public function assign($key, $value = null);
 
+    public function assignGlobal($key, $value = null);
+
     public function render($name, $variables, $return = false);
 }
 
@@ -23,6 +25,12 @@ class ArkViewPHP implements ArkViewInterface
      * @var array
      */
     private $sessions = array();
+
+    /**
+     * Global variables
+     * @var array
+     */
+    private $variables = array();
 
     /**
      * Page properties
@@ -95,16 +103,33 @@ class ArkViewPHP implements ArkViewInterface
         $this->getCurrentSession()->assign($key, $value);
     }
 
+    /**
+     * Assign global variables(can be used in different template)
+     * @param  mixed $key
+     * @param  mixed $value
+     */
+    public function assignGlobal($key, $value = null)
+    {
+        if(is_array($key)){
+            foreach($key as $k => $v){
+                $this->variables[$k] = $v;
+            }
+        }
+        else{
+            $this->variables[$key] = $value;
+        }
+    }
+
     public function getVariables(){
         return $this->getCurrentSession()->getVariables();
     }
 
     public function getVar($key, $default = null){
-        return $this->getCurrentSession()->getVar($key, $default);
+        return $this->getCurrentSession()->getVar($key, isset($this->variables[$key])?$this->variables:$default);
     }
 
     public function hasVar($key){
-        return $this->getCurrentSession()->hasVar($key);
+        return $this->getCurrentSession()->hasVar($key) || isset($this->variables[$key]);
     }
     
     /**
@@ -148,7 +173,7 @@ class ArkViewPHP implements ArkViewInterface
     public function endBlock(){
         $currentSession = $this->getCurrentSession();
         if(!$currentSession->hasBlocks()){
-            throw new \LogicException('Block does not match');
+            throw new LogicException('Block does not match');
         }
         $blockname = $currentSession->popBlock();
         $content = ob_get_contents();
@@ -213,6 +238,9 @@ class ArkViewPHP implements ArkViewInterface
 
         if($this->options['extract']){
             extract($this->getCurrentSession()->getVariables(), EXTR_SKIP);
+            if ($this->variables) {
+                extract($this->variables, EXTR_SKIP);
+            }
         }
         require($this->getViewFile($_name));
         if($this->getCurrentSession()->hasBlocks()){

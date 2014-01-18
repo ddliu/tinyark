@@ -27,6 +27,17 @@ class ArkViewTwig implements ArkViewInterface
         }
     }
 
+    public function assignGlobal($key, $value = null)
+    {
+        if (is_array($key)) {
+            foreach ($key as $k => $v) {
+                $this->assignGlobal($k, $v);
+            }
+        } else {
+            $this->twig->addGlobal($key, $value);
+        }
+    }
+
     public function render($name, $variables = null, $return = false)
     {
         if($return){

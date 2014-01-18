@@ -33,7 +33,14 @@ class ViewTest extends PHPUnit_Framework_TestCase{
 
     public function testAssign()
     {
-        $text = $this->getView()->render('assign.html.php', array('name' => 'World'), true);
+        $view = $this->getView();
+
+        // assign global
+        $view->assignGlobal('name', 'global');
+        $text = $view->render('assign.html.php', null, true);
+        $this->assertEquals($text, 'Hello global');
+
+        $text = $view->render('assign.html.php', array('name' => 'World'), true);
         $this->assertEquals($text, 'Hello World');
     }
 }

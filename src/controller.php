@@ -24,6 +24,11 @@ class ArkController{
     public function assign($key, $value = null){
         ark('view')->assign($key, $value);
     }
+
+    public function assignGlobal($key, $value = null)
+    {
+        ark('view')->assignGlobal($key, $value);
+    }
     
     public function render($name, $variables = null, $statusCode = 200){
         $basename = basename($name);
@@ -76,6 +81,11 @@ class ArkController{
      */
     public function isPost(){
         return $_SERVER['REQUEST_METHOD'] === 'POST';
+    }
+
+    public function isAjax()
+    {
+        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     }
 }
 
