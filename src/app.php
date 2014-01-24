@@ -359,6 +359,18 @@ abstract class ArkApp
         ));
     }
 
+    public function dispatchResponseEvent($event, $source = null, $data = array())
+    {
+        if (is_string($event)) {
+            $event = new ArkEvent($event, $source, $data);
+        }
+        $this->event->dispatch($event, $source, $data);
+
+        if ($event->result !== null) {
+            $this->respond($event->result);
+        }
+    }
+
     public function handleExceptionDefault($exception)
     {
         if (ARK_APP_DEBUG) {
@@ -368,6 +380,23 @@ abstract class ArkApp
         }
 
         $this->respond($resonse);
+    }
+
+    /**
+     * Respond and exit
+     * @param  mixed $response
+     */
+    public function respond($response, $exit = true)
+    {
+        // response
+        $event = new ArkEvent('app.response', $this, $response);
+        $this->event->dispatch($event);
+
+        echo $response;
+
+        $this->event->dispatch('app.shutdown', $this);
+
+        $exit && exit();
     }
 }
 
@@ -523,18 +552,6 @@ class ArkAppWeb extends ArkApp
         }
         else{
             $this->dispatchResponseEvent('app.dispatch', $this, $q);
-        }
-    }
-
-    public function dispatchResponseEvent($event, $source = null, $data = array())
-    {
-        if (is_string($event)) {
-            $event = new ArkEvent($event, $source, $data);
-        }
-        $this->event->dispatch($event, $source, $data);
-
-        if ($event->result !== null) {
-            $this->respond($event->result);
         }
     }
 
