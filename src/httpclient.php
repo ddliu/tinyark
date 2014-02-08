@@ -786,7 +786,7 @@ class ArkHttpClientResponse
 
     public function __toString()
     {
-        return $this->content;
+        return (string)$this->content;
     }
 
     public function getContent()
