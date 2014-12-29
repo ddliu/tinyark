@@ -1,1 +1,0 @@
-TinyArk supports several platforms with some common interfaces, which makes it easy to switch between different environments.
