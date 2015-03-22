@@ -1,6 +1,6 @@
 # TinyArk
 
-[![Build Status](https://travis-ci.org/ddliu/tinyark.png)](https://travis-ci.org/ddliu/tinyark)
+MOVED TO [ark/framework](https://github.com/arkphp/framework)
 
 Tiny PHP framework for open platforms.
 
