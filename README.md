@@ -2,6 +2,8 @@
 
 MOVED TO [ark/framework](https://github.com/arkphp/framework)
 
+------
+
 Tiny PHP framework for open platforms.
 
 [Document](http://codecent.com/tinyark/index.html)
